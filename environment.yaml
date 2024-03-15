@@ -1,0 +1,28 @@
+name: cs7643-project
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  # download data
+  - awscli
+
+  # jupyter
+  - ipykernel
+  - nb_conda_kernels
+  - notebook
+  
+  # pytorch
+  - lightning
+  - opencv
+  - pytorch-cuda=12.1
+
+  # other
+  - matplotlib
+  - numpy
+  - pillow
+  - scikit-learn
+  - scipy
+  - shapely
+  - tqdm
+  
