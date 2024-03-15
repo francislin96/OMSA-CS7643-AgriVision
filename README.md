@@ -42,7 +42,7 @@ $ pyenv local ENVIRONMENT_NAME
 ```
 2. Install all of the dependencies.
 ```
-$ pip install requirements.txt
+$ pip install -r requirements.txt
 ```
 
 ## Model Weights
