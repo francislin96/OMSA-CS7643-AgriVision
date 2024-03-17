@@ -2,10 +2,6 @@
 
 import numpy as np
 import cv2
-from glob import glob
-from skimage.io import imread
-import os
-import matplotlib.pyplot as plt
 
 def normalize_img(channel_list: list[np.ndarray]) -> tuple[np.ndarray]:
     """
