@@ -163,3 +163,4 @@ cython_debug/
 # Data directory folders
 data/images_2021/*/
 data/images_2024/*Jing/
+data/images_2024/raw_tiff_files
