@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import os
 import json
+import logging
 
 from typing import Union, Tuple
 
@@ -16,11 +17,17 @@ def read_and_stack(path: str) -> np.ndarray:
     Returns:
         np.ndarray: A 4 channel image in NIR-RGB format
     """
+
+    logger = logging.getLogger('debug_logger')
     channels = ['nir.tif', 'red.tif', 'green.tif', 'blue.tif']
     stack_list = []
     for c in channels:
-        channel = cv2.imread(os.path.join(path, c), -1)
-        stack_list.append(channel)
+        try:
+            channel = cv2.imread(os.path.join(path, c), -1)
+            stack_list.append(channel)
+        except cv2.error as e:
+            logger.critical(f"FILE: {path} - CHANNEL: {c}" + e)
+            return None
     try:
         stacked = np.stack(stack_list, -1)
     except ValueError as e:
@@ -60,7 +67,7 @@ def normalize_img(img_stack: np.ndarray, percentiles: tuple=(1, 99)) -> Tuple[np
 
     return norm_bgr, norm_nir
 
-def convert_boundary_to_mask(boundary_path: str, img: np.ndarray) -> np.ndarray:
+def convert_boundary_to_mask(boundary_path: str, img: np.ndarray, img_name: str) -> np.ndarray:
     """Convert a set of polygon points to a mask of an image.
 
     Args:
@@ -70,33 +77,48 @@ def convert_boundary_to_mask(boundary_path: str, img: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: A mask with values of 0 (exclude) or 255 (include)
     """
-
-    # Initialize zero mask
-    mask = np.zeros(img.shape[0:2], dtype=np.uint8)
+    logger = logging.getLogger('debug_logger')
+    # helper function to check if points are in the right format, some are not
+    def type_masker(mask: np.ndarray, boundary_path: str=boundary_path) -> bool:
+        with open(boundary_path) as f:
+            bound_dict = json.load(f)
+        type = bound_dict['type']
+        features = bound_dict['coordinates']
+        if type=='Polygon':
+            try:
+                points = np.array(features, dtype=np.int32)
+                mask = cv2.fillPoly(mask, points, 255)
+            except ValueError as e:
+                logger.critical(f'Boundary file for {img_name} is in the wrong format. Please correct it')
+                print(e)
+                mask = None
+                # for f in features:
+                #     points = np.array([f], dtype=np.int32)
+                #     mask = cv2.fillPoly(mask, points, 255)
+        elif type=='MultiPolygon':
+            for f in features:
+                try:
+                    points = np.array(f, dtype=np.int32)
+                    mask = cv2.fillPoly(mask, points, 255)
+                except ValueError as e:
+                    logger.critical(f'Boundary file for {img_name} is in the wrong format. Please correct it')
+                    print(e)
+                    mask = None
+        
+        return mask
 
     # Check for real path
     if not os.path.exists(boundary_path):
         raise(ValueError(f"The boundary path {boundary_path} does not exist."))
-
-    # Read the boundary path to extract the polygon points
-    with open(boundary_path) as f:
-        bound_dict = json.load(f)
-        type = bound_dict['type']
-        if type=='Polygon':
-            features = bound_dict['coordinates']
-            points = np.array(features, dtype=np.int32)
-            
-            mask = cv2.fillPoly(mask, points, 255)
-            
-        elif type=='MultiPolygon': # handle MultiPolygon case
-            features = bound_dict['coordinates']
-            for p in features:
-                points = np.array(p, dtype=np.int32)
-                mask = cv2.fillPoly(mask, points, 255)
+    
+    # Initialize zero mask
+    mask = np.zeros(img.shape[0:2], dtype=np.uint8)
+    mask = type_masker(boundary_path=boundary_path, mask=mask)
 
     return mask
 
-def apply_boundary_to_img(boundary_path: str, img: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+
+def apply_boundary_to_img(boundary_path: str, img: np.ndarray, img_name: str) -> Tuple[np.ndarray, np.ndarray]:
     """Applies a boundary mask from boundary_path to an image.
 
     Args:
@@ -108,7 +130,9 @@ def apply_boundary_to_img(boundary_path: str, img: np.ndarray) -> Tuple[np.ndarr
     """
     
     # convert boundary to mask
-    mask = convert_boundary_to_mask(boundary_path, img)
+    mask = convert_boundary_to_mask(boundary_path, img, img_name)
+    if mask is None:
+        return mask, img
     
     # apply mask to image
     masked_img = cv2.bitwise_and(img, img, mask=mask)
@@ -148,9 +172,9 @@ def split_img(input: Union[str, np.ndarray], crop_dim: tuple[int, int]=(512, 512
 
     # Validate input
     if type(input)==str:
-        input = cv2.imread(input)
-        if input is None:
-            raise(ValueError("Input to cv2.imread does not exist. Please check path integrity."))
+        if not os.path.exists(input):
+            raise(ValueError(f"Input {input} to cv2.imread does not exist. Please check path integrity."))
+        
     elif type(input)==np.ndarray:
         if len(input.shape)==2:
             input = np.expand_dims(input,2)
