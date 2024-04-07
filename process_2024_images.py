@@ -37,7 +37,7 @@ def process_directory(dir_and_img_name: tuple):
     stacked = read_and_stack(dir)
     if stacked is None:
         print(f"Broken tif file at {dir}, skipping")
-        logger.debug(f"Broken tif file at {dir}, skipping")
+        logger.error(f"Broken tif file at {dir}, skipping")
         return None
     bgr_img, nir_img = normalize_img(stacked, (1, 99))
 
@@ -47,7 +47,7 @@ def process_directory(dir_and_img_name: tuple):
         mask, masked_bgr = apply_boundary_to_img(boundary_path=bound_json, img=bgr_img, img_name=img_name)
         if mask is None:
             print(f"Broken boundary files at {bound_json}, skipping")
-            logger.debug(f"Broken tif file at {dir}, skipping")
+            logger.debug(f"Broken boundary files at {bound_json}, skipping")
             return None
         _, masked_nir = apply_boundary_to_img(boundary_path=bound_json, img=nir_img, img_name=img_name)
 
@@ -82,8 +82,9 @@ def main():
     dir_and_names = list(zip(glob_list, img_names))
 
 
-    num_processes = min(multiprocessing.cpu_count(), len(dir_and_names))
-    # num_processes=1
+    num_processes = multiprocessing.cpu_count()
+    num_processes = 8
+    
 
     with multiprocessing.Pool(processes=num_processes) as pool:
         list(tqdm(pool.imap(process_directory, dir_and_names), total=len(dir_and_names)))

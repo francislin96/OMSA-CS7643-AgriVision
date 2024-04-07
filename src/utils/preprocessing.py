@@ -26,7 +26,7 @@ def read_and_stack(path: str) -> np.ndarray:
             channel = cv2.imread(os.path.join(path, c), -1)
             stack_list.append(channel)
         except cv2.error as e:
-            logger.critical(f"FILE: {path} - CHANNEL: {c}" + e)
+            logger.error(f"FILE: {path} - CHANNEL: {c}" + e)
             return None
     try:
         stacked = np.stack(stack_list, -1)
@@ -89,7 +89,7 @@ def convert_boundary_to_mask(boundary_path: str, img: np.ndarray, img_name: str)
                 points = np.array(features, dtype=np.int32)
                 mask = cv2.fillPoly(mask, points, 255)
             except ValueError as e:
-                logger.critical(f'Boundary file for {img_name} is in the wrong format. Please correct it')
+                logger.debug(f'Boundary file for {img_name} is in the wrong format. Please correct it')
                 print(e)
                 mask = None
                 # for f in features:
@@ -101,7 +101,7 @@ def convert_boundary_to_mask(boundary_path: str, img: np.ndarray, img_name: str)
                     points = np.array(f, dtype=np.int32)
                     mask = cv2.fillPoly(mask, points, 255)
                 except ValueError as e:
-                    logger.critical(f'Boundary file for {img_name} is in the wrong format. Please correct it')
+                    logger.debug(f'Boundary file for {img_name} is in the wrong format. Please correct it')
                     print(e)
                     mask = None
         

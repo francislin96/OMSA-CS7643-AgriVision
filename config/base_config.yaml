@@ -1,0 +1,12 @@
+Model: deep_lab
+Backbone: resnet34
+Input_Channels: 4
+N_Classes: 9
+Scheme: supervised
+Data: full
+Optimizer: adam
+Params:
+  Learning_Rate: 0.005
+  Decay: 0.01
+  Momentum: 0.9
+  
