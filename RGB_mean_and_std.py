@@ -7,13 +7,13 @@ from PIL import Image
 import os
 
 
-test_folder_path='/Users/lujuanwen/supervised/Agriculture-Vision-2021/2021/test/images/rgb/'
+test_folder_path='<folder path>/Agriculture-Vision-2021/2021/test/images/rgb/'
 test_imgs_path = os.listdir(test_folder_path)
 test_full_paths=[test_folder_path+img for img in test_imgs_path]
-val_folder_path='/Users/lujuanwen/supervised/Agriculture-Vision-2021/2021/val/images/rgb/'
+val_folder_path='<folder path>/Agriculture-Vision-2021/2021/val/images/rgb/'
 val_imgs_path = os.listdir(val_folder_path)
 val_full_paths=[val_folder_path+img for img in val_imgs_path]
-train_folder_path='/Users/lujuanwen/supervised/Agriculture-Vision-2021/2021/train/images/rgb/'
+train_folder_path='<folder path>/Agriculture-Vision-2021/2021/train/images/rgb/'
 train_imgs_path = os.listdir(train_folder_path)
 train_full_paths=[train_folder_path+img for img in train_imgs_path]
 
