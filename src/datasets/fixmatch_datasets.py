@@ -11,7 +11,6 @@ from torchvision import transforms, datasets
 
 from datasets.datasets import *
 
-
 class CustomSubset(Dataset):
     """
     CustomSubset is a custom implementation of a torch subset based on a given DataSet object. It is particular helpful,
@@ -95,189 +94,189 @@ class CustomSubset(Dataset):
         self.targets = [self.dataset.targets[idx] for idx in self.indices]
 
 
-class Caltech(Dataset):
-    """
-    Class that implements a torch-compatible dataset object for Caltech101 and Caltech256, as the original
-    torchvision.datasets objects for Caltech101 / Caltech256 do not work reliably.
-    """
-    def __init__(
-        self,
-        root: str,
-        train: bool,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
-        download: bool = False,
-        train_split_pct: float = 9 / 10,
-        img_size: int = 224,
-        dataset_folder: str = ""
-    ):
-        """
-        Initializes Caltech object instance.
+# class Caltech(Dataset):
+#     """
+#     Class that implements a torch-compatible dataset object for Caltech101 and Caltech256, as the original
+#     torchvision.datasets objects for Caltech101 / Caltech256 do not work reliably.
+#     """
+#     def __init__(
+#         self,
+#         root: str,
+#         train: bool,
+#         transform: Optional[Callable] = None,
+#         target_transform: Optional[Callable] = None,
+#         download: bool = False,
+#         train_split_pct: float = 9 / 10,
+#         img_size: int = 224,
+#         dataset_folder: str = ""
+#     ):
+#         """
+#         Initializes Caltech object instance.
 
-        Parameters
-        ----------
-        root: str
-            Path to root data directory where Caltech dataset is located, e.g. `./data`.
-        train: bool
-            Boolean indicating if train set or test set is loaded. If train=True the train set is loaded, while if
-            train=False the test set is loaded.
-        transform: Optional[Callable] (default: None)
-            Transform / augmentation strategy that is applied to every image at every call of __getitem__.
-        target_transform: Optional[Callable] (default: None)
-            Transform / augmentation strategy that is applied to every target / label at every call of __getitem__.
-            For numeric labels, such as in image classification, this is usually None.
-        download: bool (default: False)
-            Boolean indicating if dataset should be downloaded if not available. Automatic download of Caltech datasets
-            is not implemented. This argument is added to ensure compatibility with constructors of other torch datasets.
-        train_split_pct: float (default: 0.9)
-            Float that defines the percentage of the split in training and test data. The training set is sampled
-            to be train_split_pct % of all available samples.
-        img_size: int (default: 224)
-            Image size of loaded images. As images in Caltech datasets have different resolutions, it is common practice
-            to resize them to a uniform size, e.g. 224x224 pixels.
-        dataset_folder: str (default: "")
-            Name of dataset folder in which the Caltech dataset is contained. The dataset folder has to be at the path
-            specified by `root`.
-        """
-        self.root = root
-        self.train = train
-        self.train_split = train_split_pct
-        self.data = []
-        self.targets = []
-        self.classes = []
-        self.classes_to_idx = {}
-        self.img_size = img_size
-        self.dataset_folder = dataset_folder
+#         Parameters
+#         ----------
+#         root: str
+#             Path to root data directory where Caltech dataset is located, e.g. `./data`.
+#         train: bool
+#             Boolean indicating if train set or test set is loaded. If train=True the train set is loaded, while if
+#             train=False the test set is loaded.
+#         transform: Optional[Callable] (default: None)
+#             Transform / augmentation strategy that is applied to every image at every call of __getitem__.
+#         target_transform: Optional[Callable] (default: None)
+#             Transform / augmentation strategy that is applied to every target / label at every call of __getitem__.
+#             For numeric labels, such as in image classification, this is usually None.
+#         download: bool (default: False)
+#             Boolean indicating if dataset should be downloaded if not available. Automatic download of Caltech datasets
+#             is not implemented. This argument is added to ensure compatibility with constructors of other torch datasets.
+#         train_split_pct: float (default: 0.9)
+#             Float that defines the percentage of the split in training and test data. The training set is sampled
+#             to be train_split_pct % of all available samples.
+#         img_size: int (default: 224)
+#             Image size of loaded images. As images in Caltech datasets have different resolutions, it is common practice
+#             to resize them to a uniform size, e.g. 224x224 pixels.
+#         dataset_folder: str (default: "")
+#             Name of dataset folder in which the Caltech dataset is contained. The dataset folder has to be at the path
+#             specified by `root`.
+#         """
+#         self.root = root
+#         self.train = train
+#         self.train_split = train_split_pct
+#         self.data = []
+#         self.targets = []
+#         self.classes = []
+#         self.classes_to_idx = {}
+#         self.img_size = img_size
+#         self.dataset_folder = dataset_folder
 
-        self.load_images()
+#         self.load_images()
 
-        self.transform = transform
-        self.target_transform = target_transform
+#         self.transform = transform
+#         self.target_transform = target_transform
 
-    def load_images(self):
-        """
-        Method that loads paths and targets from the dataset folder of Caltech datasets.
-        """
-        base_path = os.path.join(self.root, self.dataset_folder)
-        if not os.path.exists(base_path):
-            raise RuntimeError(
-                "Dataset not found! Please place ensure data set is present at {}".format(
-                    base_path
-                )
-            )
+#     def load_images(self):
+#         """
+#         Method that loads paths and targets from the dataset folder of Caltech datasets.
+#         """
+#         base_path = os.path.join(self.root, self.dataset_folder)
+#         if not os.path.exists(base_path):
+#             raise RuntimeError(
+#                 "Dataset not found! Please place ensure data set is present at {}".format(
+#                     base_path
+#                 )
+#             )
 
-        self.classes = sorted(filter(lambda x: not x.startswith('.') and "@ea" not in x, os.listdir(base_path)))
-        try:
-            # Remove 'BACKGROUND_Google' which is not a proper class if present (Caltech101)
-            self.classes.remove("BACKGROUND_Google")
-        except Exception as ex:
-            pass
+#         self.classes = sorted(filter(lambda x: not x.startswith('.') and "@ea" not in x, os.listdir(base_path)))
+#         try:
+#             # Remove 'BACKGROUND_Google' which is not a proper class if present (Caltech101)
+#             self.classes.remove("BACKGROUND_Google")
+#         except Exception as ex:
+#             pass
 
-        self.classes_to_idx = {
-            image_class: idx for idx, image_class in enumerate(self.classes)
-        }
+#         self.classes_to_idx = {
+#             image_class: idx for idx, image_class in enumerate(self.classes)
+#         }
 
-        for image_class in self.classes:
-            class_paths = list(
-                map(
-                    lambda x: os.path.join(base_path, image_class, x),
-                    filter(
-                        lambda x: x.endswith(".jpg"),
-                        sorted(os.listdir(os.path.join(base_path, image_class))),
-                    )
-                )
-            )
-            split_idx = int(len(class_paths) * self.train_split)
-            split_image_paths = class_paths[:split_idx] if self.train else class_paths[split_idx:]
-            self.data.extend(split_image_paths)
-            self.targets.extend(len(split_image_paths) * [self.classes_to_idx[image_class]])
+#         for image_class in self.classes:
+#             class_paths = list(
+#                 map(
+#                     lambda x: os.path.join(base_path, image_class, x),
+#                     filter(
+#                         lambda x: x.endswith(".jpg"),
+#                         sorted(os.listdir(os.path.join(base_path, image_class))),
+#                     )
+#                 )
+#             )
+#             split_idx = int(len(class_paths) * self.train_split)
+#             split_image_paths = class_paths[:split_idx] if self.train else class_paths[split_idx:]
+#             self.data.extend(split_image_paths)
+#             self.targets.extend(len(split_image_paths) * [self.classes_to_idx[image_class]])
 
-    def __getitem__(self, index):
-        """
-        Getter method for Caltech101. Returns sample and label at given index.
+#     def __getitem__(self, index):
+#         """
+#         Getter method for Caltech101. Returns sample and label at given index.
 
-        Parameters
-        ----------
-        idx: int
-            Get item at index idx of STL10.
-        Returns
-        ----------
-        item: Tuple
-            Returns transformed sample and label at index of STL10.
-        """
-        img, target = self.data[index], self.targets[index]
+#         Parameters
+#         ----------
+#         idx: int
+#             Get item at index idx of STL10.
+#         Returns
+#         ----------
+#         item: Tuple
+#             Returns transformed sample and label at index of STL10.
+#         """
+#         img, target = self.data[index], self.targets[index]
 
-        img = transforms.Resize((self.img_size, self.img_size))(Image.open(img).convert("RGB"))
+#         img = transforms.Resize((self.img_size, self.img_size))(Image.open(img).convert("RGB"))
 
-        if self.transform is not None:
-            img = self.transform(img)
+#         if self.transform is not None:
+#             img = self.transform(img)
 
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+#         if self.target_transform is not None:
+#             target = self.target_transform(target)
 
-        return img, target
+#         return img, target
 
-    def __len__(self):
-        return len(self.targets)
-
-
-Caltech101 = partial(Caltech, dataset_folder="caltech101/101_ObjectCategories")
-Caltech256 = partial(Caltech, dataset_folder="caltech256/256_ObjectCategories")
+#     def __len__(self):
+#         return len(self.targets)
 
 
-class STL10(datasets.STL10):
-    """
-    STL10 is a class that implements the STL10 dataset and supplements the original torch implementation
-    with class variables and a helper method.
-    """
-    def __init__(
-        self,
-        root: str,
-        train: bool = True,
-        folds: Optional[int] = None,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
-        download: bool = False,
-    ):
-        """
-
-        Parameters
-        ----------
-        root: str
-            Path to root data directory where STL-10 dataset is located, e.g. `./data`.
-        train: bool (default: True)
-            Boolean indicating if train set or test set is loaded. If train=True the train set is loaded, while if
-            train=False the test set is loaded.
-        folds: Optional[int] (default: None)
-            STL10 has 10 predefined folds of the dataset. If folds is not None, the specified fold is loaded. Otherwise,
-            all 10 folds are loaded.
-        transform: Optional[Callable] (default: None)
-            Transform / augmentation strategy that is applied to every image at every call of __getitem__.
-        target_transform: Optional[Callable] (default: None)
-            Transform / augmentation strategy that is applied to every target / label at every call of __getitem__.
-            For numeric labels, such as in image classification, this is usually None.
-        download: bool (default: False)
-            Boolean indicating if dataset should be downloaded if not available. Automatic download of Caltech datasets
-            is not implemented. This argument is added to ensure compatibility with constructors of other torch datasets.
-        """
-        split = "train+unlabeled" if train else "test"
-        super().__init__(
-            root,
-            split=split,
-            folds=folds,
-            transform=transform,
-            target_transform=target_transform,
-            download=download,
-        )
-        self.targets = self.labels
-        self.labeled_indices = np.argwhere(self.targets != -1).flatten().tolist()
-        self.unlabeled_indices = np.argwhere(self.targets == -1).flatten().tolist()
-
-    def get_random_labeled_indices(self, num_indices):
-        return random.sample(self.labeled_indices, num_indices)
+# Caltech101 = partial(Caltech, dataset_folder="caltech101/101_ObjectCategories")
+# Caltech256 = partial(Caltech, dataset_folder="caltech256/256_ObjectCategories")
 
 
-class HAM10000(Dataset):
+# class STL10(datasets.STL10):
+#     """
+#     STL10 is a class that implements the STL10 dataset and supplements the original torch implementation
+#     with class variables and a helper method.
+#     """
+#     def __init__(
+#         self,
+#         root: str,
+#         train: bool = True,
+#         folds: Optional[int] = None,
+#         transform: Optional[Callable] = None,
+#         target_transform: Optional[Callable] = None,
+#         download: bool = False,
+#     ):
+#         """
+
+#         Parameters
+#         ----------
+#         root: str
+#             Path to root data directory where STL-10 dataset is located, e.g. `./data`.
+#         train: bool (default: True)
+#             Boolean indicating if train set or test set is loaded. If train=True the train set is loaded, while if
+#             train=False the test set is loaded.
+#         folds: Optional[int] (default: None)
+#             STL10 has 10 predefined folds of the dataset. If folds is not None, the specified fold is loaded. Otherwise,
+#             all 10 folds are loaded.
+#         transform: Optional[Callable] (default: None)
+#             Transform / augmentation strategy that is applied to every image at every call of __getitem__.
+#         target_transform: Optional[Callable] (default: None)
+#             Transform / augmentation strategy that is applied to every target / label at every call of __getitem__.
+#             For numeric labels, such as in image classification, this is usually None.
+#         download: bool (default: False)
+#             Boolean indicating if dataset should be downloaded if not available. Automatic download of Caltech datasets
+#             is not implemented. This argument is added to ensure compatibility with constructors of other torch datasets.
+#         """
+#         split = "train+unlabeled" if train else "test"
+#         super().__init__(
+#             root,
+#             split=split,
+#             folds=folds,
+#             transform=transform,
+#             target_transform=target_transform,
+#             download=download,
+#         )
+#         self.targets = self.labels
+#         self.labeled_indices = np.argwhere(self.targets != -1).flatten().tolist()
+#         self.unlabeled_indices = np.argwhere(self.targets == -1).flatten().tolist()
+
+#     def get_random_labeled_indices(self, num_indices):
+#         return random.sample(self.labeled_indices, num_indices)
+
+
+# class HAM10000(Dataset):
     def __init__(
         self,
         root: str,
@@ -390,3 +389,40 @@ class HAM10000(Dataset):
 
     def __len__(self):
         return len(self.targets)
+    
+def get_datasets(**args, **kwargs):
+    """Generates all of the datasets necessary for training.
+    If arg 'ssl' is True, then it will generate labeled_train, unlabeled_train, val, and test.
+    Otherwise the function will only return train, val, and test
+    """
+
+    if ssl:
+        train_u_ds = None
+    else:
+        train_u_ds = None
+    
+    train_l_ds = None
+    val_ds = None
+    test_ds = None
+
+    return {
+        "train": {
+            "labled": train_l_ds,
+            "unlabeled": train_u_ds
+        },
+        "val": val_ds,
+        "test": test_ds
+    }
+
+
+class TestDataset(Dataset):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def __getitem__(self, index) -> Any:
+        return super().__getitem__(index)
+    
+    def __len__():
+
+        return len(self.target)

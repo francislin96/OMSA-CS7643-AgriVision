@@ -4,6 +4,10 @@ Input_Channels: 4
 N_Classes: 9
 Scheme: fixmatch
 Data: dev
+Train_L_Dir: './data/dev_data/labeled/train'
+Train_U_Dir: './data/dev_data/unlabeled/train'
+Val_Dir: './data/dev_data/labled/val'
+Test_Dir: './data/dev_data/labeled/test'
 Optimizer: adam
 Params:
   Learning_Rate: 0.005

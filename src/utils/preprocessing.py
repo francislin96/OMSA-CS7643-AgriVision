@@ -5,10 +5,11 @@ import cv2
 import os
 import json
 import logging
+from pathlib import Path
 
 from typing import Union, Tuple
 
-def read_and_stack(path: str) -> np.ndarray:
+def stack_tifs(path: str) -> np.ndarray:
     """_summary_
     Reads in the NIR, R, G, B separate channels and stacks them as shape (H, W, C)
     Args:
@@ -117,7 +118,6 @@ def convert_boundary_to_mask(boundary_path: str, img: np.ndarray, img_name: str)
 
     return mask
 
-
 def apply_boundary_to_img(boundary_path: str, img: np.ndarray, img_name: str) -> Tuple[np.ndarray, np.ndarray]:
     """Applies a boundary mask from boundary_path to an image.
 
@@ -212,3 +212,92 @@ def split_img(input: Union[str, np.ndarray], crop_dim: tuple[int, int]=(512, 512
     
     return strided, (h_margin, w_margin)
 
+def map_labels_to_target(img_id: str, root_dir: str, dataset_map: dict, img_size: tuple[int, int]=(512, 512)) -> np.ndarray:
+    """_summary_
+
+    Args:
+        img_id (str): An image id to read in, should not contain file extensions
+        root_dir (str): Path to the root directory, ie to images_2021/val or images_2024/train
+        dataset_map (dict): A dataset containing the pixel mapping for the dataset
+
+    Raises:
+        ValueError: If the path to one of the label masks does not exist.
+
+    Returns:
+        np.ndarray: Returns a np.ndarray (dtype=np.uint8) of shape img_size. 
+    """
+    img_id += ".png"
+    mask = np.zeros(shape=(512, 512), dtype=np.uint8)
+    print(dataset_map)
+    for i, name in enumerate(dataset_map['names']):
+        if i==0: # skip background class
+            continue
+        path = Path(root_dir) / "labels" / name / img_id
+        if os.path.exists(path):
+            label = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+            if np.any(label): # only grab masks with a non-zero value
+                idx = np.where(label != 0)
+                label[idx] = dataset_map['mask_vals'][i] # map to correct pixel value
+                mask = cv2.bitwise_or(mask, label)
+        else:
+            raise ValueError(f"The path to {path} does not exist. Please check the funtion arguments")
+
+    return mask
+
+def stack_nirrgb(img_id: str, root_dir: str) -> np.ndarray:
+    """_summary_
+
+    Args:
+        img_id (str): An image id to read in, should not contain file extensions
+        root_dir (str): Path to the root directory, ie to images_2021/val or images_2024/train
+
+    Raises:
+        ValueError: If one of the paths to the images does not exist.
+
+    Returns:
+        np.ndarray: Returns a np.ndarray (dtype=np.uint8) of shape (C, H, W) with NIR RGB channel order and C=4.
+    """
+
+    img_id += ".jpg"
+    nir_path = Path(root_dir) / "images" / "nir" / img_id
+    rgb_path = Path(root_dir) / "images" / "rgb" / img_id
+    
+    if os.path.exists(nir_path) and os.path.exists(rgb_path):
+        nir = cv2.imread(str(nir_path), cv2.IMREAD_GRAYSCALE)[..., np.newaxis]
+        rgb = cv2.imread(str(rgb_path), cv2.IMREAD_COLOR)
+        rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
+        stacked = np.moveaxis(np.concatenate((nir, rgb), axis=2), source=2, destination=0)
+
+        return stacked
+    else:
+        raise ValueError(f"Error reading the paths for {nir_path} and {rgb_path}. Please check the root_dir {root_dir} and the img_id {img_id}")
+
+
+if __name__=='__main__':
+    img_id = "1AD76MIZN_659-8394-1171-8906"
+    stacked = stack_nirrgb(img_id, root_dir='./data/images_2021/train')
+    print(stacked)
+    print(stacked.shape)
+
+    # import sys
+    # print(Path(__file__).parents[2])
+    # sys.path.append(Path(__file__).parents[2] / 'data')
+    # from data.dataset_maps import class_mapping
+
+    class_mapping = {
+    "names": [
+        "background",
+        "double_plant",
+        "drydown",
+        "endrow",
+        "nutrient_deficiency",
+        "planter_skip",
+        "water",
+        "waterway",
+        "weed_cluster"
+    ],
+    "int_labs": [i for i in range(9)],
+    "mask_vals": [0, 50, 75, 100, 125, 150, 175, 200, 255]
+}
+
+    map_labels_to_target(img_id, './data/images_2021/train', dataset_map=class_mapping)

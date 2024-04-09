@@ -5,6 +5,10 @@ N_Classes: 9
 Scheme: supervised
 Data: full
 Optimizer: adam
+Train_L_Dir: './data/images_2021/train'
+Train_U_Dir: './data/images_2024/train'
+Val_Dir: './data/images_2021/val'
+Test_Dir: './data/images_2021/test'
 Params:
   Learning_Rate: 0.005
   Decay: 0.01

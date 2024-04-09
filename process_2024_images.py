@@ -12,7 +12,7 @@ from tqdm import tqdm
 import os
 import math
 from argparse import ArgumentParser
-from src.utils.preprocessing import read_and_stack, normalize_img, crop_to_cnt, apply_boundary_to_img, split_img
+from src.utils.preprocessing import stack_tifs, normalize_img, crop_to_cnt, apply_boundary_to_img, split_img
 import multiprocessing
 
 parser = ArgumentParser("Preprocess the 2024 Agrivision Dataset")
@@ -34,7 +34,7 @@ def process_directory(dir_and_img_name: tuple):
 
     dir, img_name = dir_and_img_name
     print(img_name)
-    stacked = read_and_stack(dir)
+    stacked = stack_tifs(dir)
     if stacked is None:
         print(f"Broken tif file at {dir}, skipping")
         logger.error(f"Broken tif file at {dir}, skipping")
