@@ -32,6 +32,6 @@ create_dataset(
 # Unlabled Dataset
 create_dataset(
     num_images=30, 
-    rgb_dir='data/dev_data/unlabeled/images/rgb',
-    nir_dir='data/dev_data/unlabeled/images/nir',
+    rgb_dir='data/dev_data/unlabeled/train/images/rgb',
+    nir_dir='data/dev_data/unlabeled/train/images/nir',
     )
