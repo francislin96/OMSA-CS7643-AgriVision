@@ -35,7 +35,7 @@ ds_dict = get_datasets(
     # print(batch[0][0].shape)
 
 for batch in train_u_loader:
-    print(batch)
-    # weak_img, strong_img = batch
-    # print(weak_img.shape)
-    # print(strong_img.shape)
+    # print(batch.shape)
+    weak_img, strong_img = batch
+    print(weak_img.shape)
+    print(strong_img.shape)

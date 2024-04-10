@@ -21,6 +21,7 @@ def generate_blob(shape, intensity, num_blobs):
 
 def create_dataset(num_images, rgb_dir, nir_dir, mask_dir=None):
     os.makedirs(rgb_dir, exist_ok=True)
+    os.makedirs(nir_dir, exist_ok=True)
     if mask_dir:
         os.makedirs(mask_dir, exist_ok=True)
     for i in range(num_images):
@@ -45,5 +46,5 @@ def create_dataset(num_images, rgb_dir, nir_dir, mask_dir=None):
 
         # Save the images and masks
         cv2.imwrite(os.path.join(rgb_dir, f'image_{i}.png'), rgb)
-        cv2.imwrite(os.path.join(nir_dir,f'image_{i}.png'), nir)
+        cv2.imwrite(os.path.join(nir_dir, f'image_{i}.png'), nir)
         
