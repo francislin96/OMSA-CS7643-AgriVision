@@ -228,7 +228,6 @@ def map_labels_to_target(img_id: str, root_dir: str, dataset_map: dict, img_size
     """
     img_id += ".png"
     mask = np.zeros(shape=(512, 512), dtype=np.uint8)
-    print(dataset_map)
     for i, name in enumerate(dataset_map['names']):
         if i==0: # skip background class
             continue
@@ -244,7 +243,7 @@ def map_labels_to_target(img_id: str, root_dir: str, dataset_map: dict, img_size
 
     return mask
 
-def stack_nirrgb(img_id: str, root_dir: str) -> np.ndarray:
+def stack_rgbnir(img_id: str, root_dir: str) -> np.ndarray:
     """_summary_
 
     Args:
@@ -255,7 +254,7 @@ def stack_nirrgb(img_id: str, root_dir: str) -> np.ndarray:
         ValueError: If one of the paths to the images does not exist.
 
     Returns:
-        np.ndarray: Returns a np.ndarray (dtype=np.uint8) of shape (C, H, W) with NIR RGB channel order and C=4.
+        np.ndarray: Returns a np.ndarray (dtype=np.uint8) of shape (H, W, C) with channel order as RGBNIR and C=4.
     """
 
     img_id += ".jpg"
@@ -266,7 +265,7 @@ def stack_nirrgb(img_id: str, root_dir: str) -> np.ndarray:
         nir = cv2.imread(str(nir_path), cv2.IMREAD_GRAYSCALE)[..., np.newaxis]
         rgb = cv2.imread(str(rgb_path), cv2.IMREAD_COLOR)
         rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
-        stacked = np.moveaxis(np.concatenate((nir, rgb), axis=2), source=2, destination=0)
+        stacked = np.concatenate((rgb, nir), axis=2)
 
         return stacked
     else:

@@ -1,26 +1,21 @@
 # Weak and strong augmentations for images
 
+import torch
 import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
 
-
-def base_train_tfms():
+def train_tfms():
     transforms = A.Compose(
         [
-            ## Francis fill in here
-            ToTensorV2()
-        ]
-    )
-
-    return transforms
-
-
-def base_val_tfms():
-    transforms = A.Compose(
-        [
-            ## Francis fill in here
-            ToTensorV2()
-        ]
+            A.RandomBrightnessContrast(),
+            A.Posterize(),
+            A.SafeRotate(),
+            A.Sharpen((0.05, 0.95)),
+            A.Affine(translate_percent=(-.125, .125), shear=(-15, 15)),
+            A.Solarize(),
+            A.GaussianBlur(),
+            ToTensorV2(p=1.0)
+        ], additional_targets={'mask': 'image'}
     )
 
     return transforms
@@ -28,7 +23,7 @@ def base_val_tfms():
 
 def weak_tfms():
     transforms = A.Compose([
-        A.Affine(translate_percent=(1, 12.5), p=1.0),
+        A.Affine(translate_percent=(-.125, .125), p=1.0),
         A.HorizontalFlip(p=0.5),
         ToTensorV2(p=1.0)
     ])
@@ -39,13 +34,42 @@ def weak_tfms():
 def strong_tfms():
     transforms = A.Compose([
         A.RandomBrightnessContrast(),
-        A.ColorJitter(),
         A.Posterize(),
         A.SafeRotate(),
         A.Sharpen((0.05, 0.95)),
-        A.Affine(translate_percent=12.5, shear=(-30, 30)),
+        A.Affine(translate_percent=(-.125, .125), shear=(-15, 15)),
         A.Solarize(),
-        A.GaussianBlur()
+        A.GaussianBlur(),
+        ToTensorV2(p=1.0)
     ])
 
     return transforms
+
+def null_tfms():
+    transforms = A.Compose([
+        ToTensorV2(p=1.0)
+    ], additional_targets={'mask': 'image'})
+
+    return transforms
+
+# def test_collate_fn(batch):
+#     """
+#     Handles batches of varying sizes for the Dataloader
+#     Parameters:
+#         The batch of images passed from a Dataset in a Dataloader
+#     Returns:
+#         A zipped tuple of a given batch
+#     """
+#     return tuple(zip(*batch))
+
+def collate_fn(batch):
+    images, masks = zip(*batch)
+    images = torch.stack(images, dim=0)  # Stacks into (N, C, H, W)
+    masks = torch.stack(masks, dim=0)    # Stacks into (N, H, W)
+    return images, masks
+
+def unlab_collate_fn(batch):
+    weak_img, strong_img = zip(*batch)
+    weak_img = torch.stack(weak_img, dim=0)  # Stacks into (N, C, H, W)
+    strong_img = torch.stack(strong_img, dim=0)    # Stacks into (N, C, H, W)
+    return weak_img, strong_img
