@@ -5,14 +5,14 @@ import segmentation_models_pytorch as smp
 
 
 
-def deeplabv3_plus(*args) -> torch.nn.Module:
+def deeplabv3_plus(num_classes, **args) -> torch.nn.Module:
     
     model = smp.DeepLabV3Plus(
         encoder_name="resnet34",
         encoder_depth=5,
         encoder_weights=None,
         in_channels=4, 
-        classes=2
+        classes=num_classes
     )
 
     return model

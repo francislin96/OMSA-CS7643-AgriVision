@@ -34,17 +34,20 @@ def create_dataset(num_images, rgb_dir, nir_dir, mask_dir=None):
         if mask_dir:
   
             mask = np.zeros((512, 512), dtype=np.uint8)
-            for intensity in class_mapping['mask_vals']:
+            for j, intensity in enumerate(class_mapping['mask_vals']):
+                class_dir = os.path.join(mask_dir, class_mapping['names'][j])
                 if intensity != 0:  # Skip background
+                    os.makedirs(class_dir, exist_ok=True)
                     num_blobs = np.random.randint(1, 5)
-                    mask += generate_blob(mask.shape, intensity, num_blobs)
+                    mask = generate_blob(mask.shape, intensity, num_blobs)
+                    cv2.imwrite(os.path.join(class_dir, f"image_{i}.png"), mask)
 
             # Apply mask where the intensity is the highest (handle overlapping blobs)
-            mask = np.argmax(np.stack([mask == v for v in class_mapping['mask_vals']], axis=-1), axis=-1)
-            mask = np.choose(mask, class_mapping['mask_vals'])
-            cv2.imwrite(os.path.join(mask_dir, f'mask_{i}.png'), mask)
+            # mask = np.argmax(np.stack([mask == v for v in class_mapping['mask_vals']], axis=-1), axis=-1)
+            # mask = np.choose(mask, class_mapping['mask_vals'])
+            # cv2.imwrite(os.path.join(mask_dir, f'mask_{i}.png'), mask)
 
         # Save the images and masks
-        cv2.imwrite(os.path.join(rgb_dir, f'image_{i}.png'), rgb)
-        cv2.imwrite(os.path.join(nir_dir, f'image_{i}.png'), nir)
+        cv2.imwrite(os.path.join(rgb_dir, f'image_{i}.jpg'), rgb)
+        cv2.imwrite(os.path.join(nir_dir, f'image_{i}.jpg'), nir)
         
