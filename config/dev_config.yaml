@@ -19,6 +19,6 @@ params:
   nesterov: True
   gamma: 0.9
   epochs: 10
-  lambda: .3 # Weight for unlabled loss in total loss calculation
+  lam: .3 # Weight for unlabled loss in total loss calculation
   mu: 1 # Scaling factor for unlabled loss
 

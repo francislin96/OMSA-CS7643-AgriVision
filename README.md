@@ -82,7 +82,7 @@ TO DO:
 
 Both $\tau$ and $\mu$ are set in the config file as `mu` and `tau` hyperparameters. Both $l_S$ and $l_u$ are combined to form $l_{total}$ weighting the unlabeled loss like 
 
-$l_{total} = l_s + \lambda l_u$ where lambda is the weighting factor for the unlabeled loss term set in the config as `lambda`
+$l_{total} = l_s + \lambda l_u$ where lambda is the weighting factor for the unlabeled loss term set in the config as `lam`
 
 This is currently configured correctly in the code, and we shouldn't apply any class balancing to this loss term since we don't know the actual distributions of the labels in the unlabeled 2024 image data set. The scaling factor is currently set to 1 in the dev_config.yaml file and I haven't explored any hyperparameter tunining with that yet.
 

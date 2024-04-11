@@ -402,7 +402,7 @@ def train_step(args, model: torch.nn.Module, batch: Tuple, meters: AverageMeterS
     # Calculate CE loss between pseudo labels and strong augmentation logits
     unlabeled_loss = (F.cross_entropy(logits_u_weak, targets_u, reduction="none") * mask).mean() * 1/args.mu
 
-    loss = labeled_loss.mean() + args.lambda * unlabeled_loss
+    loss = labeled_loss.mean() + args.lam * unlabeled_loss
 
     meters.update("total_loss", loss.item(), 1)
     meters.update("labeled_loss", labeled_loss.mean().item(), logits_x.size()[0])
