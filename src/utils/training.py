@@ -223,8 +223,8 @@ import torch.nn.init as init
 #             m.momentum = bn_momentum if enable else 0.0
 
 
-def cosine_lr_decay(k: int, total_steps: int):
-    return max(0.0, math.cos(math.pi * 7 * k / (16 * total_steps)))
+# def cosine_lr_decay(k: int, total_steps: int):
+#     return max(0.0, math.cos(math.pi * 7 * k / (16 * total_steps)))
 
 
 # def linear_rampup(current: int, rampup_length: int):
@@ -259,29 +259,29 @@ def cosine_lr_decay(k: int, total_steps: int):
 #             p.requires_grad = True
 
 
-def get_wd_param_list(model: torch.nn.Module):
-    """
-    Get list of model parameters to which weight decay should be applied. The function basically filters out
-    all BatchNorm-related parameters to which weight decay should not be applied.
+# def get_wd_param_list(model: torch.nn.Module):
+#     """
+#     Get list of model parameters to which weight decay should be applied. The function basically filters out
+#     all BatchNorm-related parameters to which weight decay should not be applied.
 
-    Parameters
-    ----------
-    model: torch.nn.Module
-        torch model which is trained using weight decay.
-    Returns
-    -------
-    wd_param_list: List
-        List containing two dictionaries containing parameters for which weight decay should be applied and parameters
-        to which weight decay should not be applied.
-    """
-    wd_params, no_wd_params = [], []
-    for name, param in model.named_parameters():
-        # Filter BatchNorm parameters from weight decay parameters
-        if "bn" in name:
-            no_wd_params.append(param)
-        else:
-            wd_params.append(param)
-    return [{"params": wd_params}, {"params": no_wd_params, "weight_decay": 0}]
+#     Parameters
+#     ----------
+#     model: torch.nn.Module
+#         torch model which is trained using weight decay.
+#     Returns
+#     -------
+#     wd_param_list: List
+#         List containing two dictionaries containing parameters for which weight decay should be applied and parameters
+#         to which weight decay should not be applied.
+#     """
+#     wd_params, no_wd_params = [], []
+#     for name, param in model.named_parameters():
+#         # Filter BatchNorm parameters from weight decay parameters
+#         if "bn" in name:
+#             no_wd_params.append(param)
+#         else:
+#             wd_params.append(param)
+#     return [{"params": wd_params}, {"params": no_wd_params, "weight_decay": 0}]
 
 
 def add_weight_decay(model: torch.nn.Module, weight_decay=1e-5, skip_list=()):

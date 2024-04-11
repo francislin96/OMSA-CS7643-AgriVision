@@ -53,3 +53,26 @@ $ wget URL_TO_WEIGHTS.pth
 
 ## Inference Code or Django App Deployment
 Use this section to explain how to run inference scripts and/or stand up the Django application. We can always try to have this deployed in a AWS Sagemaker serverless instance for easy inference but that might be overkill...
+
+## Train Model (Under development)
+Set your config file using the example in `./config/dev_config.yaml` as an example
+
+Make sure your images and masks are in the same format as shown in the dummy dev_data set in `data/dev_data`
+![Image Directory Structure](assets/image_dir_structur.png)
+
+Pull the latest commit from branch `fixmatch_dev` to get the dev_data
+
+In the root directory run 
+```
+python test_main.py ./config/dev_config.yaml
+```
+
+You should see a training progress bar and the loss decreasing slightly, not bad for completely random images lol!
+
+TO DO:
+* Currently the loss functions are both standard cross-entropy so we need to look into the paper to see the actual variations they employed
+* I have not switched on the normalization augmentation for the transformations in `src/utils/transforms.py` since we don't have the NIR channel means and std yet. Once we have them, they need to go in `data/dataset_maps.py` and then push the changes.
+* No validation loop is set up yet (in the works...)
+* We don't have any of the `torchmetrics` set up yet either. These are going to be really easy to implement. I would suggest starting a `metric.Collection` in `src/metrics.py` [torchmetrics](https://lightning.ai/docs/torchmetrics/stable/)
+* Implement some unit tests and integration tests!!! I've been lazy and added random sanity checks to the root directory such as `test_main.py`and `test_loaders.py` but these should be refactored and put in the proper `./tests/...` directory.
+* Something else I'm missing...

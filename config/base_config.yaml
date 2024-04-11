@@ -1,16 +1,16 @@
-Model: deep_lab
-Backbone: resnet34
-Input_Channels: 4
-N_Classes: 9
-Scheme: supervised
-Data: full
-Optimizer: adam
-Train_L_Dir: './data/images_2021/train'
-Train_U_Dir: './data/images_2024/train'
-Val_Dir: './data/images_2021/val'
-Test_Dir: './data/images_2021/test'
-Params:
-  Learning_Rate: 0.005
-  Decay: 0.01
-  Momentum: 0.9
+model: deep_lab
+backbone: resnet34
+input_Channels: 4
+num_classes: 9
+scheme: supervised
+data: full
+optimizer: sgd
+train_l_dir: './data/images_2021/train'
+train_u_dir: './data/images_2024/train'
+val_dir: './data/images_2021/val'
+test_dir: './data/images_2021/test'
+params:
+  lr: 0.005
+  weight_decay: 0.01
+  momentum: 0.9
   

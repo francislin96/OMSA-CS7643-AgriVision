@@ -1,16 +1,23 @@
-Model: deep_lab
-Backbone: resnet34
-Input_Channels: 4
-N_Classes: 9
-Scheme: fixmatch
-Data: dev
-Train_L_Dir: './data/dev_data/labeled/train'
-Train_U_Dir: './data/dev_data/unlabeled/train'
-Val_Dir: './data/dev_data/labled/val'
-Test_Dir: './data/dev_data/labeled/test'
-Optimizer: adam
-Params:
-  Learning_Rate: 0.005
-  Decay: 0.01
-  Momentum: 0.9
-  
+model: deep_lab
+backbone: resnet34
+input_channels: 4
+num_classes: 9
+scheme: fixmatch
+data: dev
+train_l_dir: './data/dev_data/labeled/train'
+train_u_dir: './data/dev_data/unlabeled/train'
+val_dir: './data/dev_data/labled/val'
+test_dir: './data/dev_data/labeled/test'
+optimizer: sgd
+device: 'cuda'
+params:
+  threshold: .80 # high confidence threshold for ssl
+  batch_size: 4
+  lr: 0.005
+  weight_decay: 0.01
+  momentum: 0.9
+  nesterov: True
+  gamma: 0.9
+  epochs: 10
+  wu: .3
+

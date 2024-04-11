@@ -227,6 +227,10 @@ def map_labels_to_target(img_id: str, root_dir: str, dataset_map: dict, img_size
         np.ndarray: Returns a np.ndarray (dtype=np.uint8) of shape img_size. 
     """
     img_id += ".png"
+
+    #mask = np.argmax(np.stack([mask == v for v in class_mapping['mask_vals']], axis=-1), axis=-1)
+    # mask = np.choose(mask, class_mapping['mask_vals'])
+
     mask = np.zeros(shape=(512, 512), dtype=np.uint8)
     for i, name in enumerate(dataset_map['names']):
         if i==0: # skip background class
@@ -236,8 +240,11 @@ def map_labels_to_target(img_id: str, root_dir: str, dataset_map: dict, img_size
             label = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
             if np.any(label): # only grab masks with a non-zero value
                 idx = np.where(label != 0)
-                label[idx] = dataset_map['mask_vals'][i] # map to correct pixel value
-                mask = cv2.bitwise_or(mask, label)
+
+                label_mask = label != 0
+                # Directly assign the class value to the mask where the current label is not background (0)
+                mask[label_mask] = dataset_map['int_labs'][i] # map to correct pixel value
+                
         else:
             raise ValueError(f"The path to {path} does not exist. Please check the funtion arguments")
 

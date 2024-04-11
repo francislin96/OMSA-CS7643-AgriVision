@@ -82,8 +82,6 @@ class AgDataset(Dataset):
             weak_img_numpy = np.moveaxis(weak_img_tensor.cpu().numpy(), source=0, destination=2)
             strong_img_tensor = strong_transforms(image=weak_img_numpy)['image']
 
-            # print(weak_img.shape)
-            # print(strong_img.shape)
             return weak_img_tensor, strong_img_tensor
         
         # Return a one set of transformations
