@@ -11,7 +11,7 @@ test_dir: './data/dev_data/labeled/test'
 optimizer: sgd
 device: 'cuda'
 params:
-  threshold: .80 # high confidence threshold for ssl
+  tau: .80 # high confidence tau for ssl (confidence threshold)
   batch_size: 4
   lr: 0.005
   weight_decay: 0.01
@@ -19,5 +19,6 @@ params:
   nesterov: True
   gamma: 0.9
   epochs: 10
-  wu: .3
+  lambda: .3 # Weight for unlabled loss in total loss calculation
+  mu: 1 # Scaling factor for unlabled loss
 

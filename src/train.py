@@ -360,14 +360,14 @@ def train_epoch(args, model: torch.nn.Module, optimizer: torch.optim.Optimizer, 
 #     with torch.no_grad():
 #         pseudo_labels = torch.softmax(logits_u_weak, dim=1)
 #         max_probs, targets_u = torch.max(pseudo_labels, dim=1)
-#         mask = max_probs.ge(args.threshold).float()
+#         mask = max_probs.ge(args.tau).float()
 
 #     # Compute unlabeled loss as cross entropy between strongly augmented (unlabeled) samples and previously computed
 #     # pseudo-labels.
 #     unlabeled_loss = (F.cross_entropy(logits_u_strong, targets_u, reduction="none") * mask).mean()
 
 #     # Compute total loss
-#     loss = labeled_loss.mean() + args.wu * unlabeled_loss
+#     loss = labeled_loss.mean() + args.lambda * unlabeled_loss
 
 #     meters.update("total_loss", loss.item(), 1)
 #     meters.update("labeled_loss", labeled_loss.mean().item(), logits_x.size()[0])
@@ -400,9 +400,9 @@ def train_step(args, model: torch.nn.Module, batch: Tuple, meters: AverageMeterS
     targets_u, mask = pseudo_labels(args, logits_u_weak)
 
     # Calculate CE loss between pseudo labels and strong augmentation logits
-    unlabeled_loss = (F.cross_entropy(logits_u_weak, targets_u, reduction="none") * mask).mean()
+    unlabeled_loss = (F.cross_entropy(logits_u_weak, targets_u, reduction="none") * mask).mean() * 1/args.mu
 
-    loss = labeled_loss.mean() + args.wu * unlabeled_loss
+    loss = labeled_loss.mean() + args.lambda * unlabeled_loss
 
     meters.update("total_loss", loss.item(), 1)
     meters.update("labeled_loss", labeled_loss.mean().item(), logits_x.size()[0])
@@ -415,7 +415,7 @@ def pseudo_labels(args, logits_u_weak):
 
     pseudo_labels = torch.softmax(logits_u_weak, dim=1)
     max_probs, targets_u = torch.max(pseudo_labels, dim=1)
-    mask = max_probs.ge(args.threshold).float()
+    mask = max_probs.ge(args.tau).float()
 
     return targets_u, mask
 

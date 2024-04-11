@@ -70,12 +70,22 @@ python test_main.py ./config/dev_config.yaml
 You should see a training progress bar and the loss decreasing slightly, not bad for completely random images lol!
 
 TO DO:
-* Currently the loss functions are both standard cross-entropy so we need to look into the paper to see the actual variations they employed
-  The loss for the labeled images is straightforward cross entropy loss where we take the mean value of CE for a given image from the formula $H(p_b, p_m(y | \alpha(x_b))$ where $p_b$ is the true label distribution, and $p_m(y | \alpha(x_b))$ are the pixelwise class probabilities output from the models predictions on weakly augmented images $\alpha(x_b)$.
+* The loss for the labeled images is straightforward cross entropy loss where we take the mean value of CE for a given image from the formula $H(p_b, p_m(y | \alpha(x_b))$ where $p_b$ is the true label distribution, and $p_m(y | \alpha(x_b))$ are the pixelwise class probabilities output from the models predictions on weakly augmented images $\alpha(x_b)$.
   
   $l_s=\frac{1}{B} sum H(p_b, p_m(y | \alpha(x_b))$
+
+  We should implement this vanilla version and then make the class balanced focal loss version on top of it
   
-  $l_u = \frac{1}{\micro B} \sum \mathbb{1} max(q_b \geq \tau) H (\hat{q}_b, p_m(y | \mathcal{A} (u_b)))$
+* The loss for the unlabled images just makes some minor modifications on the cross entropy. The cross entropy term is calculated using the pseudo labels $\hat{q}_b$ and the softmax predictions from the strongly augmented images $p_m(y | \mathcal{A} (u_b))$. These pixelwise losses are masked based on a hyperparameter $\tau \in \[0, 1\]$ that sets the condfidence level below which to discard the predictions using the max softmax predictions $q_b$ using $\mathbb{1} max(q_b \geq \tau)$. The mean is taken over all of these losses and the $B$ batch term is scaled by the hyperparameter $\mu$.
+
+ $l_u = \frac{1}{\micro B} \sum \mathbb{1} max(q_b \geq \tau) H (\hat{q}_b, p_m(y | \mathcal{A} (u_b)))$
+
+Both $\tau$ and $\mu$ are set in the config file as `mu` and `tau` hyperparameters. Both $l_S$ and $l_u$ are combined to form $l_{total}$ weighting the unlabeled loss like 
+
+$l_{total} = l_s + \lambda l_u$ where lambda is the weighting factor for the unlabeled loss term set in the config as `lambda`
+
+This is currently configured correctly in the code, and we shouldn't apply any class balancing to this loss term since we don't know the actual distributions of the labels in the unlabeled 2024 image data set. The scaling factor is currently set to 1 in the dev_config.yaml file and I haven't explored any hyperparameter tunining with that yet.
+
 * I have not switched on the normalization augmentation for the transformations in `src/utils/transforms.py` since we don't have the NIR channel means and std yet. Once we have them, they need to go in `data/dataset_maps.py` and then push the changes.
 * No validation loop is set up yet (in the works...)
 * We don't have any of the `torchmetrics` set up yet either. These are going to be really easy to implement. I would suggest starting a `metric.Collection` in `src/metrics.py` [torchmetrics](https://lightning.ai/docs/torchmetrics/stable/)

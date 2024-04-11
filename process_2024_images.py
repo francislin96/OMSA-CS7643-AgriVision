@@ -57,7 +57,7 @@ def process_directory(dir_and_img_name: tuple):
     bgr_crops, bgr_margins = split_img(bgr_img)
     nir_crops, nir_margins = split_img(nir_img)
 
-    # Loop through cropped images and save when img area > threshold
+    # Loop through cropped images and save when img area > tau
     for n in range(bgr_crops.shape[0]):
         for m in range(bgr_crops.shape[1]):
             bgr_img = bgr_crops[n, m]
@@ -114,7 +114,7 @@ def main():
         # bgr_crops, bgr_margins = split_img(bgr_img)
         # nir_crops, nir_margins = split_img(nir_img)
 
-        # # Loop through cropped images and save when img area > threshold
+        # # Loop through cropped images and save when img area > tau
         # for n in range(bgr_crops.shape[0]):
         #     for m in range(bgr_crops.shape[1]):
         #         bgr_img = bgr_crops[n, m]
