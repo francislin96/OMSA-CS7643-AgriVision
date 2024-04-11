@@ -58,7 +58,7 @@ Use this section to explain how to run inference scripts and/or stand up the Dja
 Set your config file using the example in `./config/dev_config.yaml` as an example
 
 Make sure your images and masks are in the same format as shown in the dummy dev_data set in `data/dev_data`
-![Image Directory Structure](assets/image_dir_structur.png)
+![Image Directory Structure](assets/image_dir_structure.png)
 
 Pull the latest commit from branch `fixmatch_dev` to get the dev_data
 
