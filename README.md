@@ -71,6 +71,11 @@ You should see a training progress bar and the loss decreasing slightly, not bad
 
 TO DO:
 * Currently the loss functions are both standard cross-entropy so we need to look into the paper to see the actual variations they employed
+  The loss for the labeled images is straightforward cross entropy loss where we take the mean value of CE for a given image from the formula $H(p_b, p_m(y | \alpha(x_b))$ where $p_b$ is the true label distribution, and $p_m(y | \alpha(x_b))$ are the pixelwise class probabilities output from the models predictions on weakly augmented images $\alpha(x_b)$.
+  
+  $l_s=\frac{1}{B} sum H(p_b, p_m(y | \alpha(x_b))$
+  
+  $l_u = \frac{1}{\micro B} \sum \mathbb{1} max(q_b \geq \tau) H (\hat{q}_b, p_m(y | \mathcal{A} (u_b)))$
 * I have not switched on the normalization augmentation for the transformations in `src/utils/transforms.py` since we don't have the NIR channel means and std yet. Once we have them, they need to go in `data/dataset_maps.py` and then push the changes.
 * No validation loop is set up yet (in the works...)
 * We don't have any of the `torchmetrics` set up yet either. These are going to be really easy to implement. I would suggest starting a `metric.Collection` in `src/metrics.py` [torchmetrics](https://lightning.ai/docs/torchmetrics/stable/)
