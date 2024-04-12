@@ -5,17 +5,27 @@ import segmentation_models_pytorch as smp
 
 
 
-def deeplabv3_plus(num_classes, **args) -> torch.nn.Module:
+def deeplabv3_plus(args) -> torch.nn.Module:
     
     model = smp.DeepLabV3Plus(
-        encoder_name="resnet34",
-        encoder_depth=5,
-        encoder_weights=None,
-        in_channels=4, 
-        classes=num_classes
+        encoder_name=args.encoder,
+        encoder_depth=args.encoder_depth,
+        encoder_weights=args.encoder_weights,
+        in_channels=args.input_channels, 
+        classes=args.num_classes
     )
 
     return model
+
+def fpn(args) -> torch.nn.Module:
+
+    model = smp.FPN(
+        encoder_name=args.encoder,
+        encoder_depth=args.encoder_depth,
+        encoder_weights=args.encoder_weights,
+        in_channels=args.input_channels,
+        classes=args.num_classes
+    )
 
 
 if __name__ == '__main__':

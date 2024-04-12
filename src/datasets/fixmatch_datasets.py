@@ -26,9 +26,7 @@ def get_datasets(train_l_dir: str, train_u_dir: str, val_dir: str, test_dir:str 
     val_tfms = transform_dict['val']
     test_tfms = transform_dict['test']
     if ssl:
-        print(True)
         train_u_ds = AgDataset(root_dir=train_u_dir, ssl_transforms=(weak_tfms(), strong_tfms()))
-        print(len(train_u_ds))
     else:
         train_u_ds = None
     

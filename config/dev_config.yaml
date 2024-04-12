@@ -1,12 +1,14 @@
 model: deep_lab
-backbone: resnet34
+# encoder: resnet34
+encoder: efficientnet-b1
+encoder_depth: 5
+encoder_weights: imagenet # default=None
 input_channels: 4
 num_classes: 9
 ssl: True
-data: dev
 # train_l_dir: './data/dev_data/labeled/train'
 # train_u_dir: './data/dev_data/unlabeled/train'
-# val_dir: './data/dev_data/labled/val'
+# val_dir: './data/dev_data/labeled/val'
 # test_dir: './data/dev_data/labeled/test'
 
 train_l_dir: './data/images_2021/train'
@@ -17,13 +19,13 @@ optimizer: sgd
 device: 'cuda'
 params:
   tau: .80 # high confidence tau for ssl (confidence threshold)
-  batch_size: 4
-  lr: 0.005
+  batch_size: 2
+  lr: 0.001
   weight_decay: 0.0001
   momentum: 0.9
   nesterov: True
   gamma: 0.999
-  epochs: 10
-  lam: .3 # Weight for unlabled loss in total loss calculation
+  epochs: 20
+  lam: .1 # Weight for unlabled loss in total loss calculation
   mu: 1 # Scaling factor for unlabled loss
 

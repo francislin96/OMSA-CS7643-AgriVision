@@ -30,9 +30,6 @@ def main(args):
     train_u_ds = ds_dict['train']['unlabeled']
     val_ds = ds_dict['val']
 
-    # print(len(train_l_ds))
-    # print(len(train_u_ds))
-
     (train_l_loader, train_u_loader), val_loader, test_loader = get_dataloaders(
         train_l_ds=ds_dict['train']['labeled'],
         val_ds=ds_dict['val'],
@@ -40,10 +37,7 @@ def main(args):
         batch_size=args.batch_size
     )
 
-    # print(len(train))
-
-    # args, model, train_l_loader: DataLoader, train_u_loader: DataLoader, val_loader: Dataloader, test_loader: DataLoader=None, filter_bias_and_bn=True
-    model = deeplabv3_plus(num_classes=args.num_classes).to(args.device)
+    model = deeplabv3_plus(args).to(args.device)
 
     train(args, model, train_l_loader, train_u_loader, val_loader)
 
@@ -69,7 +63,5 @@ if __name__ == '__main__':
     config = load_yaml_config(str(args.config))
 
     args = set_args_attr(config, args)
-
-    print(args)
 
     main(args)
