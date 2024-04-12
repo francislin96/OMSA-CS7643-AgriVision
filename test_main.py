@@ -5,12 +5,13 @@ from src.train import train
 from src.datasets.fixmatch_datasets import get_datasets
 from src.datasets.dataloaders import get_dataloaders
 from src.models.create_models import deeplabv3_plus
-from src.utils.transforms import strong_tfms, weak_tfms, null_tfms
+from src.utils.transforms import train_tfms, strong_tfms, weak_tfms, null_tfms
 
 
 def main(args):
 
     transform_dict = {
+        'train': train_tfms,
         'strong': strong_tfms,
         'weak': weak_tfms,
         'val': null_tfms,

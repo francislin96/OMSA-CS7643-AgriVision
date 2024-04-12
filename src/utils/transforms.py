@@ -4,25 +4,58 @@ import torch
 import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
 
-def train_tfms():
-    transforms = A.Compose(
-        [
+def train_tfms(norm: dict=None) -> A.Compose:
+    """Form a albumentations Compose function to transform an image and a mask for labeled train images.
+
+    Args:
+        norm (dict, optional): A dictionary with keys 'means' and 'std' and values are 4-tuples with dataset means and std. Defaults to None.
+
+    Returns:
+        A.Compose: An albumentations Compose function
+    """
+
+    if norm:
+        means = norm['means']
+        std = norm['std']
+    else:
+        means = (0, 0, 0, 0)
+        std = (1, 1, 1, 1)
+
+    transforms = A.Compose([
+            A.Normalize(means, std),
+            A.ChannelShuffle(),
+            A.GaussNoise(),
             A.RandomBrightnessContrast(),
-            A.Posterize(),
             A.SafeRotate(),
             A.Sharpen((0.05, 0.95)),
             A.Affine(translate_percent=(-.125, .125), shear=(-15, 15)),
             A.Solarize(),
             A.GaussianBlur(),
             ToTensorV2(p=1.0)
-        ], additional_targets={'mask': 'image'}
-    )
+    ], additional_targets={'mask': 'mask'})
 
     return transforms
 
 
-def weak_tfms():
+def weak_tfms(norm: dict=None) -> A.Compose:
+    """Form a albumentations Compose function to weakly augment an image for the unlabeled set.
+
+    Args:
+        norm (dict, optional): A dictionary with keys 'means' and 'std' and values are 4-tuples with dataset means and std. Defaults to None.
+
+    Returns:
+        A.Compose: An albumentations Compose function
+    """
+
+    if norm:
+        means = norm['means']
+        std = norm['std']
+    else:
+        means = (0, 0, 0, 0)
+        std = (1, 1, 1, 1)
+
     transforms = A.Compose([
+        A.Normalize(means, std),
         A.Affine(translate_percent=(-.125, .125), p=1.0),
         A.HorizontalFlip(p=0.5),
         ToTensorV2(p=1.0)
@@ -31,10 +64,28 @@ def weak_tfms():
     return transforms
 
 
-def strong_tfms():
+def strong_tfms(norm: dict=None) -> A.Compose:
+    """Form a albumentations Compose function to strongly augment an image for the unlabeled set.
+
+    Args:
+        norm (dict, optional): A dictionary with keys 'means' and 'std' and values are 4-tuples with dataset means and std. Defaults to None.
+
+    Returns:
+        A.Compose: An albumentations Compose function
+    """
+
+    if norm:
+        means = norm['means']
+        std = norm['std']
+    else:
+        means = (0, 0, 0, 0)
+        std = (1, 1, 1, 1)
+
     transforms = A.Compose([
+        A.Normalize(means, std),
+        A.ChannelShuffle(),
+        A.GaussNoise(),
         A.RandomBrightnessContrast(),
-        A.Posterize(),
         A.SafeRotate(),
         A.Sharpen((0.05, 0.95)),
         A.Affine(translate_percent=(-.125, .125), shear=(-15, 15)),
@@ -45,22 +96,30 @@ def strong_tfms():
 
     return transforms
 
-def null_tfms():
+def null_tfms(norm: dict=None) -> A.Compose:
+    """Form a albumentations Compose function to transform an image for the validation set.
+
+    Args:
+        norm (dict, optional): A dictionary with keys 'means' and 'std' and values are 4-tuples with dataset means and std. Defaults to None.
+
+    Returns:
+        A.Compose: An albumentations Compose function
+    """
+
+    if norm:
+        means = norm['means']
+        std = norm['std']
+    else:
+        means = (0, 0, 0, 0)
+        std = (1, 1, 1, 1)
+
     transforms = A.Compose([
+        A.Normalize(means, std, ),
         ToTensorV2(p=1.0)
-    ], additional_targets={'mask': 'image'})
+    ])
 
     return transforms
 
-# def test_collate_fn(batch):
-#     """
-#     Handles batches of varying sizes for the Dataloader
-#     Parameters:
-#         The batch of images passed from a Dataset in a Dataloader
-#     Returns:
-#         A zipped tuple of a given batch
-#     """
-#     return tuple(zip(*batch))
 
 def collate_fn(batch):
     images, masks = zip(*batch)

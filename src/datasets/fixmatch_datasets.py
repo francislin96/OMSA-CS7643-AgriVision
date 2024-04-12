@@ -21,6 +21,7 @@ def get_datasets(train_l_dir: str, train_u_dir: str, val_dir: str, test_dir:str 
     If arg 'ssl' is True, then it will generate labeled_train, unlabeled_train, val, and test.
     Otherwise the function will only return train, val, and test
     """
+    train_tfms = transform_dict['train']
     strong_tfms = transform_dict['strong']
     weak_tfms = transform_dict['weak']
     val_tfms = transform_dict['val']
@@ -30,7 +31,7 @@ def get_datasets(train_l_dir: str, train_u_dir: str, val_dir: str, test_dir:str 
     else:
         train_u_ds = None
     
-    train_l_ds = AgDataset(root_dir=train_l_dir, transforms=strong_tfms())
+    train_l_ds = AgDataset(root_dir=train_l_dir, transforms=train_tfms())
     val_ds = AgDataset(root_dir=val_dir, transforms=val_tfms())
     # test_ds = AgDataset(root_dir=test_dir, transforms=test_tfms())
     test_ds = None
@@ -64,6 +65,9 @@ class AgDataset(Dataset):
 
         if len(self.nir_names)==0 or len(self.rgb_names)==0:
             raise FileNotFoundError(f"No images found for root dir {root_dir}. Please check path integrity in the config file and try again.")
+        
+        if len(self.nir_names) != len(self.rgb_names):
+            raise ValueError(f"Mismatch in the number of NIR file names: {len(self.nir_names)} and RGB file names: {len(self.rgb_names)}")
 
         self.ssl_transforms = ssl_transforms
         self.transforms = transforms
@@ -71,6 +75,7 @@ class AgDataset(Dataset):
 
         print(len(self.nir_names))
         print(len(self.rgb_names))
+
 
 
     def __getitem__(self, index):
@@ -96,12 +101,21 @@ class AgDataset(Dataset):
         # Return a one set of transformations
         elif self.transforms: 
             mask = map_labels_to_target(img_id=img_id, root_dir=self.root_dir, dataset_map=class_mapping)
+
+            # print(mask.dtype, mask.shape)
+            # print(stacked.dtype, stacked.shape)
+
+
+
             transformed = self.transforms(image=stacked, mask=mask)
             trans_img = transformed["image"]
             trans_mask = transformed["mask"]
 
+            # print(trans_img.dtype, trans_img.shape)
+            # print(trans_mask.dtype, trans_mask.shape)
+
             return trans_img, trans_mask
-        
+            # return stacked, mask
         # Else just return a tensor image and mask
         else: 
             mask = map_labels_to_target(img_id=img_id, root_dir=self.root_dir, dataset_map=class_mapping)

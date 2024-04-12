@@ -16,8 +16,9 @@ class_mapping = {
     "mask_vals": [0, 50, 75, 100, 125, 150, 175, 200, 255]
 }
 
-# Values listed in NIR/R/G/B format not NIR/B/G/R (more like opencv)
+# Values listed in R/G/B/NIR order
+# These values are for the labeled training set ONLY
 dataset_normalization = {
-    "means": (0, 0, 0, 0),
-    "std": (0, 0, 0, 0)
+    "means": (111.45638762836, 113.896525896208, 112.225877823739, 118.304591896293),
+    "std": (43.7544657087047, 41.2893581411199, 41.7538742005257, 46.5557582714383)
 }

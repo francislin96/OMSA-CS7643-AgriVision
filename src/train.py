@@ -143,7 +143,7 @@ def train_step(
 
     loss = labeled_loss.mean() + args.lam * unlabeled_loss
 
-    print(loss)
+    print("Losses: ", loss.item(), labeled_loss.item(), unlabeled_loss.item())
 
     meters.update("total_loss", loss.item(), 1)
     meters.update("labeled_loss", labeled_loss.mean().item(), logits_x.size()[0])
