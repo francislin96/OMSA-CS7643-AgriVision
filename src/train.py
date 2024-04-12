@@ -291,6 +291,8 @@ def train_epoch(args, model: torch.nn.Module, optimizer: torch.optim.Optimizer, 
 
     p_bar = tqdm(range(len(train_l_loader)))
 
+    print("\n\n\n", len(train_l_loader), "\n\n\n")
+    # print(len(train_u_loader))
     for batch_idx, batch in enumerate(
         zip(train_l_loader, train_u_loader)
     ):
@@ -403,6 +405,8 @@ def train_step(args, model: torch.nn.Module, batch: Tuple, meters: AverageMeterS
     unlabeled_loss = (F.cross_entropy(logits_u_weak, targets_u, reduction="none") * mask).mean() * 1/args.mu
 
     loss = labeled_loss.mean() + args.lam * unlabeled_loss
+
+    print(loss)
 
     meters.update("total_loss", loss.item(), 1)
     meters.update("labeled_loss", labeled_loss.mean().item(), logits_x.size()[0])

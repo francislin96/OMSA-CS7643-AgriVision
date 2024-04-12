@@ -26,7 +26,9 @@ def get_datasets(train_l_dir: str, train_u_dir: str, val_dir: str, test_dir:str 
     val_tfms = transform_dict['val']
     test_tfms = transform_dict['test']
     if ssl:
+        print(True)
         train_u_ds = AgDataset(root_dir=train_u_dir, ssl_transforms=(weak_tfms(), strong_tfms()))
+        print(len(train_u_ds))
     else:
         train_u_ds = None
     
@@ -56,12 +58,21 @@ class AgDataset(Dataset):
         self.root_dir = root_dir
         extensions = ['*.jpg', '*.png']
 
+        if not os.path.exists(self.root_dir):
+            raise NotADirectoryError(f'Path to root dir {self.root_dir} does not exist. Please check path integrity')
+
         self.nir_names = list(itertools.chain.from_iterable(glob(f'{ext}', root_dir=os.path.join(root_dir, "images", "nir")) for ext in extensions))
         self.rgb_names = list(itertools.chain.from_iterable(glob(f'{ext}', root_dir=os.path.join(root_dir, "images", "rgb")) for ext in extensions))
+
+        if len(self.nir_names)==0 or len(self.rgb_names)==0:
+            raise FileNotFoundError(f"No images found for root dir {root_dir}. Please check path integrity in the config file and try again.")
 
         self.ssl_transforms = ssl_transforms
         self.transforms = transforms
         self.null_transform = null_tfms
+
+        print(len(self.nir_names))
+        print(len(self.rgb_names))
 
 
     def __getitem__(self, index):
