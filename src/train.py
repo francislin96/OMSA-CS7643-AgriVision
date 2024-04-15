@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from src.utils.eval import AverageMeterSet
 from src.utils.training import add_weight_decay
 from src.models.optimizers import get_exp_scheduler, get_SGD
+from src.metrics import Metrics
 
 
 logger = logging.getLogger()
@@ -40,19 +41,22 @@ def train(
     scheduler = get_exp_scheduler(optimizer, gamma=args.gamma)
     start_epoch = 0
 
+    metrics = Metrics()
     for epoch in range(start_epoch, args.epochs):
-        train_total_loss, train_l_loss, train_u_loss = train_epoch(
+        train_total_loss, train_l_loss, train_u_loss, metrics = train_epoch(
             args,
             model,
             optimizer,
             scheduler,
             train_l_loader,
             train_u_loader,
-            epoch
+            epoch,
+            metrics
         )
         print("total_loss: ", train_total_loss)
         print("labeled_loss: ", train_l_loss)
         print("unlabeled_loss: ", train_u_loss)
+        print(metrics)
 
     return model
 
@@ -64,10 +68,12 @@ def train_epoch(
         scheduler: torch.optim.lr_scheduler,
         train_l_loader, 
         train_u_loader, 
-        epoch
+        epoch,
+        metrics
     ):
 
     meters = AverageMeterSet()
+    metrics.reset()
 
     model.zero_grad()
     model.train()
@@ -77,7 +83,7 @@ def train_epoch(
     for batch_idx, batch in enumerate(
         zip(train_l_loader, train_u_loader)
     ):
-        loss = train_step(args, model, batch, meters)
+        loss, metrics = train_step(args, model, batch, meters, metrics)
 
         # remove plotting later
         epoch_losses.append(loss.cpu().item())
@@ -107,6 +113,7 @@ def train_epoch(
         meters["total_loss"].avg,
         meters["labeled_loss"].avg,
         meters["unlabeled_loss"].avg,
+        metrics
     )
 
 
@@ -114,7 +121,8 @@ def train_step(
         args, 
         model: torch.nn.Module, 
         batch: Tuple, 
-        meters: AverageMeterSet
+        meters: AverageMeterSet,
+        metrics: Metrics
     ):
 
     # unpack batches
@@ -149,7 +157,12 @@ def train_step(
     meters.update("labeled_loss", labeled_loss.mean().item(), logits_x.size()[0])
     meters.update("unlabeled_loss", unlabeled_loss.item(), logits_u_strong.size()[0])
 
-    return loss
+    # metrics
+    metrics.update_labeled(logits_x, labels)
+    metrics.update_unlabeled(logits_u_weak, targets_u)
+    print(metrics)
+
+    return loss, metrics
 
 @torch.no_grad()
 def pseudo_labels(args, logits_u_weak):
