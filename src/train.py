@@ -50,6 +50,7 @@ def train(
             scheduler,
             train_l_loader,
             train_u_loader,
+            val_loader,
             epoch,
             metrics
         )
@@ -67,7 +68,8 @@ def train_epoch(
         optimizer: torch.optim.Optimizer, 
         scheduler: torch.optim.lr_scheduler,
         train_l_loader, 
-        train_u_loader, 
+        train_u_loader,
+        val_loader,
         epoch,
         metrics
     ):
@@ -83,7 +85,7 @@ def train_epoch(
     for batch_idx, batch in enumerate(
         zip(train_l_loader, train_u_loader)
     ):
-        loss, metrics = train_step(args, model, batch, meters, metrics)
+        loss, metrics = train_step(args, model, batch, val_loader, meters, metrics)
 
         # remove plotting later
         epoch_losses.append(loss.cpu().item())
@@ -120,7 +122,8 @@ def train_epoch(
 def train_step(
         args, 
         model: torch.nn.Module, 
-        batch: Tuple, 
+        batch: Tuple,
+        val_loader: DataLoader,
         meters: AverageMeterSet,
         metrics: Metrics
     ):
@@ -160,6 +163,9 @@ def train_step(
     # metrics
     metrics.update_labeled(logits_x, labels)
     metrics.update_unlabeled(logits_u_weak, targets_u)
+    for val_batch in val_loader:
+        val_img, val_labels = val_batch
+        metrics.update_validation(model(val_img), val_labels)
     print(metrics)
 
     return loss, metrics
