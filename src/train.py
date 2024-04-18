@@ -43,7 +43,7 @@ def train(
 
     metrics = Metrics()
     for epoch in range(start_epoch, args.epochs):
-        train_total_loss, train_l_loss, train_u_loss, metrics = train_epoch(
+        train_total_loss, train_l_loss, train_u_loss, val_loss, metrics = train_epoch(
             args,
             model,
             optimizer,
@@ -57,6 +57,7 @@ def train(
         print("total_loss: ", train_total_loss)
         print("labeled_loss: ", train_l_loss)
         print("unlabeled_loss: ", train_u_loss)
+        print("validation loss: ", val_loss)
         print(metrics)
 
     return model
@@ -85,7 +86,7 @@ def train_epoch(
     for batch_idx, batch in enumerate(
         zip(train_l_loader, train_u_loader)
     ):
-        loss, metrics = train_step(args, model, batch, val_loader, meters, metrics)
+        loss, metrics = train_step(args, model, batch, meters, metrics)
 
         # remove plotting later
         epoch_losses.append(loss.cpu().item())
@@ -111,10 +112,14 @@ def train_epoch(
         )
         p_bar.update()
 
+    val_loss, metrics = validate_epoch(model, val_loader, metrics)
+    print(metrics)
+
     return (
         meters["total_loss"].avg,
         meters["labeled_loss"].avg,
         meters["unlabeled_loss"].avg,
+        val_loss,
         metrics
     )
 
@@ -123,7 +128,7 @@ def train_step(
         args, 
         model: torch.nn.Module, 
         batch: Tuple,
-        val_loader: DataLoader,
+        # val_loader: DataLoader,
         meters: AverageMeterSet,
         metrics: Metrics
     ):
@@ -163,10 +168,10 @@ def train_step(
     # metrics
     metrics.update_labeled(logits_x, labels)
     metrics.update_unlabeled(logits_u_weak, targets_u)
-    for val_batch in val_loader:
-        val_img, val_labels = val_batch
-        metrics.update_validation(model(val_img), val_labels)
-    print(metrics)
+    # for val_batch in val_loader:
+    #     val_img, val_labels = val_batch
+    #     metrics.update_validation(model(val_img), val_labels)
+    # print(metrics)
 
     return loss, metrics
 
@@ -178,3 +183,17 @@ def pseudo_labels(args, logits_u_weak):
     mask = max_probs.ge(args.tau).float()
 
     return targets_u, mask
+
+@torch.no_grad()
+def validate_epoch(model, val_loader, metrics):
+    model.eval()
+    val_loss = 0
+    val_size = 0
+    for val_batch in val_loader:
+        val_img, val_labels = val_batch
+        logits = model(val_img)
+        metrics.update_validation(logits, val_labels)
+        val_loss += F.cross_entropy(logits, val_labels.long(), reduction="mean") * val_img.size(0)
+        val_size += val_img.size(0)
+    # average loss
+    return (val_loss / val_size).item(), metrics
