@@ -151,10 +151,7 @@ def train_step(
     targets_u, mask = pseudo_labels(args, logits_u_weak)
 
     # Calculate CE loss between pseudo labels and strong augmentation logits
-    if args.focal_loss:
-        unlabeled_loss = (F.cross_entropy(logits_u_weak, targets_u, reduction="none", weight=reweight_loss(labels)) * mask).mean() * 1/args.mu
-    else:
-        unlabeled_loss = (F.cross_entropy(logits_u_weak, targets_u, reduction="none") * mask).mean() * 1/args.mu
+    unlabeled_loss = (F.cross_entropy(logits_u_weak, targets_u, reduction="none") * mask).mean() * 1/args.mu
 
     loss = labeled_loss.mean() + args.lam * unlabeled_loss
 
