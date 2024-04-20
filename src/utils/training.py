@@ -309,3 +309,18 @@ def add_weight_decay(model: torch.nn.Module, weight_decay=1e-5, skip_list=()):
     return [
         {'params': no_decay, 'weight_decay': 0.},
         {'params': decay, 'weight_decay': weight_decay}]
+
+
+def reweight_loss(labels, beta=0.9999):
+
+    # of samples of each class
+    cls_num_list = np.array(torch.bincount(labels.view(-1), minlength=9))
+    
+    # effective number of samples
+    effective_num = (1 - beta) / (np.array(1 - np.power(beta, cls_num_list)) + 1e-5) # epsilon to avoid dividing by 0
+
+    # normalized to sum up to the total number of classes
+    per_cls_weights = effective_num / np.sum(effective_num) * len(effective_num)
+
+    # turn to tensor
+    return torch.tensor(per_cls_weights).float()
