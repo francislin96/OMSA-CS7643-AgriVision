@@ -85,7 +85,7 @@ class AgDataset(Dataset):
         index = index % len(self.rgb_names)
 
         img_id = self.rgb_names[index][:-4]
-        stacked = stack_rgbnir(img_id=img_id, root_dir=self.root_dir)
+        stacked, mask = stack_rgbnir(img_id=img_id, root_dir=self.root_dir)
 
         # apply weak and strong transformations
         if self.ssl_transforms:
@@ -100,30 +100,31 @@ class AgDataset(Dataset):
         
         # Return a one set of transformations
         elif self.transforms: 
-            mask = map_labels_to_target(img_id=img_id, root_dir=self.root_dir, dataset_map=class_mapping)
+            target = map_labels_to_target(img_id=img_id, root_dir=self.root_dir, dataset_map=class_mapping)
 
-            # print(mask.dtype, mask.shape)
-            # print(stacked.dtype, stacked.shape)
-
-
-
-            transformed = self.transforms(image=stacked, mask=mask)
+            transformed = self.transforms(image=stacked, target=target, mask=mask)
             trans_img = transformed["image"]
+            trans_target = transformed["target"]
             trans_mask = transformed["mask"]
 
-            # print(trans_img.dtype, trans_img.shape)
-            # print(trans_mask.dtype, trans_mask.shape)
+            trans_img *= trans_mask
+            trans_target *= trans_mask
 
-            return trans_img, trans_mask
-            # return stacked, mask
+            return trans_img, trans_target
+
         # Else just return a tensor image and mask
         else: 
-            mask = map_labels_to_target(img_id=img_id, root_dir=self.root_dir, dataset_map=class_mapping)
-            transformed = self.null_transform(image=stacked, mask=mask)
-            trans_img = transformed['image']
-            trans_mask = transformed['mask']
+            target = map_labels_to_target(img_id=img_id, root_dir=self.root_dir, dataset_map=class_mapping)
 
-            return trans_img, trans_mask
+            transformed = self.null_transform(image=stacked, target=target, mask=mask)
+            trans_img = transformed["image"]
+            trans_target = transformed["target"]
+            trans_mask = transformed["mask"]
+
+            trans_img *= trans_mask
+            trans_target *= trans_mask
+
+            return trans_img, trans_target
     
     def __len__(self):
         return len(self.rgb_names)

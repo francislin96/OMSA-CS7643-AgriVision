@@ -20,12 +20,12 @@ device: 'cuda'
 params:
   tau: .80 # high confidence tau for ssl (confidence threshold)
   batch_size: 2
-  lr: 0.01
+  lr: 0.005
   weight_decay: 0.00001
-  momentum: 0.9
+  momentum: 0.99
   nesterov: True
   gamma: 0.999
   epochs: 20
-  lam: .5 # Weight for unlabled loss in total loss calculation
+  lam: 0 # Weight for unlabled loss in total loss calculation
   mu: 1 # Scaling factor for unlabled loss
 
