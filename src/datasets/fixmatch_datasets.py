@@ -16,25 +16,26 @@ from src.utils.preprocessing import stack_rgbnir, map_labels_to_target
 from src.utils.transforms import null_tfms
 from data.dataset_maps import class_mapping
 
-def get_datasets(train_l_dir: str, train_u_dir: str, val_dir: str, test_dir:str , transform_dict: dict, ssl: bool=False):
+def get_datasets(train_l_dir: str, val_dir: str, test_dir:str, transform_dict: dict, train_u_dir: str=None, ssl: bool=False):
     """Generates all of the datasets necessary for training.
     If arg 'ssl' is True, then it will generate labeled_train, unlabeled_train, val, and test.
     Otherwise the function will only return train, val, and test
     """
+
     train_tfms = transform_dict['train']
-    strong_tfms = transform_dict['strong']
-    weak_tfms = transform_dict['weak']
     val_tfms = transform_dict['val']
     test_tfms = transform_dict['test']
+
     if ssl:
+        strong_tfms = transform_dict['strong']
+        weak_tfms = transform_dict['weak']
         train_u_ds = AgDataset(root_dir=train_u_dir, ssl_transforms=(weak_tfms(), strong_tfms()))
     else:
         train_u_ds = None
     
     train_l_ds = AgDataset(root_dir=train_l_dir, transforms=train_tfms())
     val_ds = AgDataset(root_dir=val_dir, transforms=val_tfms())
-    # test_ds = AgDataset(root_dir=test_dir, transforms=test_tfms())
-    test_ds = None
+    test_ds = AgDataset(root_dir=test_dir, transforms=test_tfms())
 
     return {
         "train": {

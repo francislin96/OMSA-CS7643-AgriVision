@@ -23,9 +23,8 @@ def train(
         args, 
         model, 
         train_l_loader: DataLoader, 
-        train_u_loader: DataLoader, 
         val_loader: DataLoader, 
-        test_loader: DataLoader=None, 
+        train_u_loader: DataLoader=None, 
         filter_bias_and_bn=True
     ):
     
@@ -44,63 +43,67 @@ def train(
 
     metrics = Metrics(args)
     for epoch in range(start_epoch, args.epochs):
-        train_total_loss, train_l_loss, train_u_loss, val_loss, metrics = train_epoch(
-            args,
-            model,
-            optimizer,
-            scheduler,
-            train_l_loader,
-            train_u_loader,
-            val_loader,
-            epoch,
-            metrics
-        )
-        print("total_loss: ", train_total_loss)
-        print("labeled_loss: ", train_l_loss)
-        print("unlabeled_loss: ", train_u_loss)
-        print("validation loss: ", val_loss)
-        print(metrics)
+        if train_u_loader:
+            train_total_loss, train_l_loss, train_u_loss, val_loss, metrics = train_ssl_epoch(
+                args,
+                model,
+                optimizer,
+                scheduler,
+                epoch, 
+                metrics,
+                train_l_loader,
+                val_loader,
+                train_u_loader
+            )
+
+            print("total_loss: ", train_total_loss)
+            print("labeled_loss: ", train_l_loss)
+            print("unlabeled_loss: ", train_u_loss)
+            print("validation loss: ", val_loss)
+            print(metrics)
+
+        else: 
+            train_loss, val_loss, metrics = train_epoch(
+                args,
+                model, 
+                optimizer, 
+                scheduler,
+                epoch,
+                metrics, 
+                train_l_loader,
+                val_loader
+            )
+            print("train_loss: ", train_loss)
+            print("validation loss: ", val_loss)
+            print(metrics)
 
     return model
-
 
 def train_epoch(
         args, 
         model: torch.nn.Module, 
         optimizer: torch.optim.Optimizer, 
         scheduler: torch.optim.lr_scheduler,
-        train_l_loader, 
-        train_u_loader,
-        val_loader,
-        epoch,
-        metrics
-    ):
-
+        epoch : int,
+        metrics: Metrics,
+        train_l_loader: DataLoader, 
+        val_loader: DataLoader
+):
     meters = AverageMeterSet()
     metrics.reset()
 
     model.zero_grad()
     model.train()
 
-    epoch_losses = [] # remove later
     p_bar = tqdm(range(len(train_l_loader)))
-    for batch_idx, batch in enumerate(
-        zip(train_l_loader, train_u_loader)
-    ):
-        loss, metrics = train_step(args, model, batch, meters, metrics)
 
-        # remove plotting later
-        epoch_losses.append(loss.cpu().item())
-        if batch_idx % 100 == 0:
-            plt.plot(epoch_losses)
-            plt.savefig(f'Losses_{batch_idx}.png')
-            plt.close()
-
+    for batch_idx, batch in enumerate(train_l_loader):
+        loss, metrics = train_step(args, model, batch, meters, metrics, ssl=False)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        scheduler.step()
+        # scheduler.step()
 
         p_bar.set_description(
             "Train Epoch: {epoch}/{epochs:4}. Iter: {batch:4}/{iter:4}. LR: {lr:.6f}.".format(
@@ -113,6 +116,9 @@ def train_epoch(
         )
         p_bar.update()
 
+    # Move scheduler step to epoch level
+    scheduler.step()
+
     val_loss, metrics = validate_epoch(model, val_loader, metrics)
     print(metrics)
 
@@ -124,59 +130,134 @@ def train_epoch(
         metrics
     )
 
+def train_ssl_epoch(
+        args, 
+        model: torch.nn.Module, 
+        optimizer: torch.optim.Optimizer, 
+        scheduler: torch.optim.lr_scheduler,
+        epoch : int,
+        metrics: Metrics,
+        train_l_loader: DataLoader, 
+        val_loader: DataLoader,
+        train_u_loader: DataLoader
+    ):
+
+    meters = AverageMeterSet()
+    metrics.reset()
+    model.zero_grad()
+    model.train()
+
+    epoch_losses = [] # remove later
+    p_bar = tqdm(range(len(train_l_loader)))
+    
+    for batch_idx, batch in enumerate(
+        zip(train_l_loader, train_u_loader)
+    ):
+        loss, metrics = train_step(args, model, batch, meters, metrics, ssl=True)
+
+        # remove plotting later
+        epoch_losses.append(loss.cpu().item())
+        if batch_idx % 100 == 0:
+            plt.plot(epoch_losses)
+            plt.savefig(f'Losses_{batch_idx}.png')
+            plt.close()
+
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        # scheduler.step()
+
+        p_bar.set_description(
+            "Train Epoch: {epoch}/{epochs:4}. Iter: {batch:4}/{iter:4}. LR: {lr:.6f}.".format(
+                epoch=epoch + 1,
+                epochs=args.epochs,
+                batch=batch_idx + 1,
+                iter=len(train_l_loader),
+                lr=scheduler.get_last_lr()[0],
+            )
+        )
+        p_bar.update()
+
+    # Move scheduler step to epoch level
+    scheduler.step()
+
+    val_loss, metrics = validate_epoch(model, val_loader, metrics)
+    print(metrics)
+
+    return (
+        meters["total_loss"].avg,
+        meters["labeled_loss"].avg,
+        meters["unlabeled_loss"].avg,
+        val_loss,
+        metrics
+    )
 
 def train_step(
         args, 
         model: torch.nn.Module, 
         batch: Tuple,
-        # val_loader: DataLoader,
         meters: AverageMeterSet,
-        metrics: Metrics
+        metrics: Metrics,
+        ssl: bool=False
     ):
 
-    # unpack batches
-    lab_batch, unlab_batch = batch
-    l_img, labels = lab_batch
-    weak_img, strong_img = unlab_batch
+    # unpack batches for ssl
+    if ssl:
+        lab_batch, unlab_batch = batch
+        l_img, labels = lab_batch
+        weak_img, strong_img = unlab_batch
 
-    # Concatenate inputs and send to device
-    inputs = torch.cat((l_img, weak_img, strong_img)).float().to(args.device)
-    labels = labels.to(args.device).long()
+        # Concatenate inputs and send to device
+        inputs = torch.cat((l_img, weak_img, strong_img)).float().to(args.device)
+        labels = labels.to(args.device).long()
 
-    # Compute logits for labeled and unlabeled data
-    logits = model(inputs)
-    logits_x = logits[:len(l_img)]
-    logits_u_weak, logits_u_strong = logits[len(l_img):].chunk(2)
-    del inputs
+        # Compute logits for labeled and unlabeled data
+        logits = model(inputs)
+        logits_x = logits[:len(l_img)]
+        logits_u_weak, logits_u_strong = logits[len(l_img):].chunk(2)
+        del inputs
 
-    # Compute CE loss for labeled samples
-    if args.focal_loss:
-        labeled_loss = F.cross_entropy(logits_x, labels, reduction="mean", weight=reweight_loss(labels))
+        # Compute CE loss for labeled samples
+        if args.focal_loss:
+            labeled_loss = F.cross_entropy(logits_x, labels, reduction="mean", weight=reweight_loss(labels))
+        else:
+            labeled_loss = F.cross_entropy(logits_x, labels, reduction="mean")
+
+        # Compute pseudo-labels for unlabeled samples based on model predictions on weakly augmented samples
+        targets_u, mask = pseudo_labels(args, logits_u_weak)
+
+        # Calculate CE loss between pseudo labels and strong augmentation logits
+        unlabeled_loss = (F.cross_entropy(logits_u_weak, targets_u, reduction="none") * mask).mean() * 1/args.mu
+
+        loss = labeled_loss.mean() + args.lam * unlabeled_loss
+
+        print("Losses: ", loss.item(), labeled_loss.item(), unlabeled_loss.item())
+
+        meters.update("total_loss", loss.item(), 1)
+        meters.update("labeled_loss", labeled_loss.mean().item(), logits_x.size()[0])
+        meters.update("unlabeled_loss", unlabeled_loss.item(), logits_u_strong.size()[0])
+
+        # metrics
+        metrics.update_labeled(logits_x, labels)
+        metrics.update_unlabeled(logits_u_weak, targets_u)
+
     else:
-        labeled_loss = F.cross_entropy(logits_x, labels, reduction="mean")
+        img, labels = batch
+        img = img.float().to(args.device)
+        labels = labels.to(args.device).long()
+        logits = model(img)
+        if args.focal_loss:
+            loss = F.cross_entropy(logits, labels, reduction="mean", weight=reweight_loss(labels))
+        else:
+            loss = F.cross_entropy(logits, labels, reduction="mean")
+        
+        print("Losses: ", loss.item())
+        
+        meters.update("train_loss", loss.item(), 1)
 
-    # Compute pseudo-labels for unlabeled samples based on model predictions on weakly augmented samples
-    targets_u, mask = pseudo_labels(args, logits_u_weak)
-
-    # Calculate CE loss between pseudo labels and strong augmentation logits
-    unlabeled_loss = (F.cross_entropy(logits_u_weak, targets_u, reduction="none") * mask).mean() * 1/args.mu
-
-    loss = labeled_loss.mean() + args.lam * unlabeled_loss
-
-    print("Losses: ", loss.item(), labeled_loss.item(), unlabeled_loss.item())
-
-    meters.update("total_loss", loss.item(), 1)
-    meters.update("labeled_loss", labeled_loss.mean().item(), logits_x.size()[0])
-    meters.update("unlabeled_loss", unlabeled_loss.item(), logits_u_strong.size()[0])
-
-    # metrics
-    metrics.update_labeled(logits_x, labels)
-    metrics.update_unlabeled(logits_u_weak, targets_u)
-
-    # for val_batch in val_loader:
-    #     val_img, val_labels = val_batch
-    #     metrics.update_validation(model(val_img), val_labels)
-    # print(metrics)
+        # metrics
+        metrics.update_labeled(logits, labels)
 
     return loss, metrics
 
