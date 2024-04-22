@@ -30,12 +30,12 @@ from torchmetrics import JaccardIndex
 #         return (miou, ious)
     
 class Metrics():
-    def __init__(self):
+    def __init__(self, args):
         self.num_classes = 9
-        self.labeled_mIoU = JaccardIndex(task='multiclass', num_classes=self.num_classes)
-        self.labeled_IoU = [JaccardIndex(task="binary") for i in range(self.num_classes)]
-        self.unlabeled_mIoU = JaccardIndex(task='multiclass', num_classes=self.num_classes)
-        self.unlabeled_IoU = [JaccardIndex(task="binary") for i in range(self.num_classes)]
+        self.labeled_mIoU = JaccardIndex(task='multiclass', num_classes=self.num_classes).to(args.device)
+        self.labeled_IoU = [JaccardIndex(task="binary").to(args.device) for i in range(self.num_classes)]
+        self.unlabeled_mIoU = JaccardIndex(task='multiclass', num_classes=self.num_classes).to(args.device)
+        self.unlabeled_IoU = [JaccardIndex(task="binary").to(args.device) for i in range(self.num_classes)]
 
     def __repr__(self):
         return self.print()
