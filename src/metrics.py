@@ -36,6 +36,8 @@ class Metrics():
         self.labeled_IoU = [JaccardIndex(task="binary") for i in range(self.num_classes)]
         self.unlabeled_mIoU = JaccardIndex(task='multiclass', num_classes=self.num_classes)
         self.unlabeled_IoU = [JaccardIndex(task="binary") for i in range(self.num_classes)]
+        self.val_mIoU = JaccardIndex(task='multiclass', num_classes=self.num_classes)
+        self.val_IoU = [JaccardIndex(task="binary") for i in range(self.num_classes)]
 
     def __repr__(self):
         return self.print()
@@ -54,21 +56,31 @@ class Metrics():
         for i in range(self.num_classes):
             self.unlabeled_IoU[i].update(pred==i, labels==i)
 
+    def update_validation(self, logits, labels):
+        pred = torch.argmax(logits, dim=1)
+        self.val_mIoU.update(pred, labels)
+        for i in range(self.num_classes):
+            self.val_IoU[i].update(pred==i, labels==i)
+
     def compute(self):
         labeled_mIoU = self.labeled_mIoU.compute()
         labeled_IoU = [i.compute() for i in self.labeled_IoU]
         unlabeled_mIoU = self.unlabeled_mIoU.compute()
         unlabeled_IoU = [i.compute() for i in self.unlabeled_IoU]
-        return labeled_mIoU, labeled_IoU, unlabeled_mIoU, unlabeled_IoU
+        val_mIoU = self.val_mIoU.compute()
+        val_IoU = [i.compute() for i in self.val_IoU]
+        return labeled_mIoU, labeled_IoU, unlabeled_mIoU, unlabeled_IoU, val_mIoU, val_IoU
 
     def reset(self):
         self.labeled_mIoU.reset()
         [i.reset() for i in self.labeled_IoU]
         self.unlabeled_mIoU.reset()
         [i.reset() for i in self.unlabeled_IoU]
+        self.val_mIoU.reset()
+        [i.reset() for i in self.val_IoU]
 
     def print(self):
-        labeled_mIoU, labeled_IoU, unlabeled_mIoU, unlabeled_IoU = self.compute()
+        labeled_mIoU, labeled_IoU, unlabeled_mIoU, unlabeled_IoU, val_mIoU, val_IoU = self.compute()
     
         labeled_metrics_str = "Labeled IoU:\n"
         labeled_metrics_str += f"mIoU: {labeled_mIoU:.4f}\n"
@@ -85,5 +97,13 @@ class Metrics():
                 unlabeled_metrics_str += f"IoU{i}: {iou:.4f}\n"
             else:
                 unlabeled_metrics_str += f"IoU{i}: {iou:.4f}\t"
+
+        val_metrics_str = "Validation IoU:\n"
+        val_metrics_str += f"mIoU: {val_mIoU:.4f}\n"
+        for i, iou in enumerate(val_IoU):
+            if i % 5 == 4:
+                val_metrics_str += f"IoU{i}: {iou:.4f}\n"
+            else:
+                val_metrics_str += f"IoU{i}: {iou:.4f}\t"
     
-        return labeled_metrics_str + "\n" + unlabeled_metrics_str
+        return labeled_metrics_str + "\n" + unlabeled_metrics_str + "\n" + val_metrics_str
