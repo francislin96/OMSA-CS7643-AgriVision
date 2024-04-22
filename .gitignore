@@ -164,3 +164,4 @@ cython_debug/
 data/images_2021/*/
 data/images_2024/*Jing/
 data/images_2024/raw_tiff_files
+data/images_2021_reshuffled/*/
