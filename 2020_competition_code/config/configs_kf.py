@@ -23,8 +23,8 @@ class agriculture_configs(object):
     val_size = [512, 512] #[1224, 1224]#[2248, 2248]
     train_samples = 12901
     val_samples = 1200
-    train_batch = 7
-    val_batch = 7
+    train_batch = 32
+    val_batch = 32
 
     # flag of mean_std normalization to [-1, 1]
     pre_norm = False
