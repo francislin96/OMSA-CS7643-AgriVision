@@ -27,6 +27,12 @@ def get_SGD(parameters, lr, momentum, weight_decay, nesterov):
         nesterov
     )
 
+def get_adam(parameters, lr, weight_decay):
+
+    return Adam(
+        params=parameters, lr=lr, weight_decay=weight_decay
+    )
+
 
 # def get_scheduler(args, optimizer):
 #     """

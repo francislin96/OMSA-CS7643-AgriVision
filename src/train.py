@@ -5,6 +5,8 @@ from tqdm import tqdm
 from typing import Callable, Tuple
 from PIL import Image
 from functools import partial
+import matplotlib
+matplotlib.use('Agg') # Non GUI backend for matplotlib
 import matplotlib.pyplot as plt
 
 import torch
@@ -12,10 +14,9 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from src.utils.eval import AverageMeterSet
 from src.utils.training import add_weight_decay
-from src.models.optimizers import get_exp_scheduler, get_SGD
+from src.models.optimizers import get_exp_scheduler, get_SGD, get_adam
 from src.metrics import Metrics
 from src.utils.training import reweight_loss
-
 
 logger = logging.getLogger()
 
@@ -37,6 +38,8 @@ def train(
 
     if args.optimizer.lower() == 'sgd':
         optimizer = get_SGD(parameters, lr=args.lr, momentum=args.momentum, weight_decay=weight_decay, nesterov=args.nesterov)
+    elif args.optimizer.lower() == 'adam':
+        optimizer = get_adam(parameters, lr=args.lr, weight_decay=weight_decay)
 
     scheduler = get_exp_scheduler(optimizer, gamma=args.gamma)
     start_epoch = 0
@@ -44,7 +47,7 @@ def train(
     metrics = Metrics(args)
     for epoch in range(start_epoch, args.epochs):
         if train_u_loader:
-            train_total_loss, train_l_loss, train_u_loss, val_loss, metrics = train_ssl_epoch(
+            train_total_loss, train_l_loss, train_u_loss, metrics = train_ssl_epoch(
                 args,
                 model,
                 optimizer,
@@ -52,30 +55,31 @@ def train(
                 epoch, 
                 metrics,
                 train_l_loader,
-                val_loader,
                 train_u_loader
             )
 
             print("total_loss: ", train_total_loss)
             print("labeled_loss: ", train_l_loss)
             print("unlabeled_loss: ", train_u_loss)
-            print("validation loss: ", val_loss)
             print(metrics)
 
         else: 
-            train_loss, val_loss, metrics = train_epoch(
+            train_loss, metrics = train_epoch(
                 args,
                 model, 
                 optimizer, 
                 scheduler,
                 epoch,
                 metrics, 
-                train_l_loader,
-                val_loader
+                train_l_loader
             )
             print("train_loss: ", train_loss)
             print("validation loss: ", val_loss)
             print(metrics)
+
+        val_loss, val_metrics = validate_epoch(model, val_loader, metrics)
+        print("val_loss: ", val_loss)
+        print(val_metrics)
 
     return model
 
@@ -87,23 +91,33 @@ def train_epoch(
         epoch : int,
         metrics: Metrics,
         train_l_loader: DataLoader, 
-        val_loader: DataLoader
 ):
     meters = AverageMeterSet()
     metrics.reset()
 
-    model.zero_grad()
+    # model.zero_grad()
     model.train()
 
+    epoch_losses = [] # remove later
     p_bar = tqdm(range(len(train_l_loader)))
 
     for batch_idx, batch in enumerate(train_l_loader):
+        # Zero the gradient
+        model.zero_grad()
+        # optimizer.zero_grad()
+        # Calculate loss
         loss, metrics = train_step(args, model, batch, meters, metrics, ssl=False)
-
-        optimizer.zero_grad()
+        # Backpropagate and step optimizer
         loss.backward()
         optimizer.step()
         # scheduler.step()
+        
+        # remove plotting later
+        epoch_losses.append(loss.cpu().item())
+        if batch_idx % 100 == 0:
+            plt.plot(epoch_losses)
+            plt.savefig(f'Losses_{batch_idx}.png')
+            plt.close()
 
         p_bar.set_description(
             "Train Epoch: {epoch}/{epochs:4}. Iter: {batch:4}/{iter:4}. LR: {lr:.6f}.".format(
@@ -119,15 +133,10 @@ def train_epoch(
     # Move scheduler step to epoch level
     scheduler.step()
 
-    val_loss, metrics = validate_epoch(model, val_loader, metrics)
-    print(metrics)
-
     return (
         meters["total_loss"].avg,
         meters["labeled_loss"].avg,
         meters["unlabeled_loss"].avg,
-        val_loss,
-        metrics
     )
 
 def train_ssl_epoch(
@@ -153,7 +162,11 @@ def train_ssl_epoch(
     for batch_idx, batch in enumerate(
         zip(train_l_loader, train_u_loader)
     ):
+        optimizer.zero_grad()
         loss, metrics = train_step(args, model, batch, meters, metrics, ssl=True)
+        loss.backward()
+        optimizer.step()
+        # scheduler.step()
 
         # remove plotting later
         epoch_losses.append(loss.cpu().item())
@@ -161,12 +174,6 @@ def train_ssl_epoch(
             plt.plot(epoch_losses)
             plt.savefig(f'Losses_{batch_idx}.png')
             plt.close()
-
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        # scheduler.step()
 
         p_bar.set_description(
             "Train Epoch: {epoch}/{epochs:4}. Iter: {batch:4}/{iter:4}. LR: {lr:.6f}.".format(
@@ -182,15 +189,10 @@ def train_ssl_epoch(
     # Move scheduler step to epoch level
     scheduler.step()
 
-    val_loss, metrics = validate_epoch(model, val_loader, metrics)
-    print(metrics)
-
     return (
         meters["total_loss"].avg,
         meters["labeled_loss"].avg,
         meters["unlabeled_loss"].avg,
-        val_loss,
-        metrics
     )
 
 def train_step(
@@ -254,7 +256,7 @@ def train_step(
         
         print("Losses: ", loss.item())
         
-        meters.update("train_loss", loss.item(), 1)
+        meters.update("total_loss", loss.item(), 1)
 
         # metrics
         metrics.update_labeled(logits, labels)
@@ -271,12 +273,14 @@ def pseudo_labels(args, logits_u_weak):
     return targets_u, mask
 
 @torch.no_grad()
-def validate_epoch(model, val_loader, metrics):
+def validate_epoch(args, model, val_loader, metrics):
     model.eval()
     val_loss = 0
     val_size = 0
     for val_batch in val_loader:
         val_img, val_labels = val_batch
+        val_img = val_img.to(args.device)
+        val_labels = val_img.to(args.device).long()
         logits = model(val_img)
         metrics.update_validation(logits, val_labels)
         val_loss += F.cross_entropy(logits, val_labels.long(), reduction="mean") * val_img.size(0)
