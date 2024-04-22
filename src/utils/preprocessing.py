@@ -267,17 +267,25 @@ def stack_rgbnir(img_id: str, root_dir: str) -> np.ndarray:
     img_id += ".jpg"
     nir_path = Path(root_dir) / "images" / "nir" / img_id
     rgb_path = Path(root_dir) / "images" / "rgb" / img_id
-    
+
+    img_id = img_id[:-4] + ".png"
+    mask_path = Path(root_dir) / "masks" / img_id
+
     if os.path.exists(nir_path) and os.path.exists(rgb_path):
         nir = cv2.imread(str(nir_path), cv2.IMREAD_GRAYSCALE)[..., np.newaxis]
         rgb = cv2.imread(str(rgb_path), cv2.IMREAD_COLOR)
         rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
         stacked = np.concatenate((rgb, nir), axis=2)
-
-        return stacked
     else:
         raise ValueError(f"Error reading the paths for {nir_path} and {rgb_path}. Please check the root_dir {root_dir} and the img_id {img_id}")
+    
+    if mask_path.exists():
+        mask = (cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE) / 255).astype(np.uint8)
+    else:
+        # print(f"mask {mask_path} does not exist")
+        mask = np.ones(shape=nir.shape[:-1], dtype=np.uint8)
 
+    return stacked, mask
 
 if __name__=='__main__':
     img_id = "1AD76MIZN_659-8394-1171-8906"

@@ -41,7 +41,7 @@ def train(
     scheduler = get_exp_scheduler(optimizer, gamma=args.gamma)
     start_epoch = 0
 
-    metrics = Metrics()
+    metrics = Metrics(args)
     for epoch in range(start_epoch, args.epochs):
         train_total_loss, train_l_loss, train_u_loss, val_loss, metrics = train_epoch(
             args,
@@ -168,6 +168,7 @@ def train_step(
     # metrics
     metrics.update_labeled(logits_x, labels)
     metrics.update_unlabeled(logits_u_weak, targets_u)
+
     # for val_batch in val_loader:
     #     val_img, val_labels = val_batch
     #     metrics.update_validation(model(val_img), val_labels)

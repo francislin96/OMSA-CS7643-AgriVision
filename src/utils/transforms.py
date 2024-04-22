@@ -23,16 +23,16 @@ def train_tfms(norm: dict=None) -> A.Compose:
 
     transforms = A.Compose([
             A.Normalize(means, std),
-            A.ChannelShuffle(),
-            A.GaussNoise(),
-            A.RandomBrightnessContrast(),
+            A.ChannelShuffle(p=.2),
+            # A.GaussNoise(),
+            # A.RandomBrightnessContrast(p=.2),
             A.SafeRotate(),
             A.Sharpen((0.05, 0.95)),
-            A.Affine(translate_percent=(-.125, .125), shear=(-15, 15)),
-            A.Solarize(),
+            A.Affine(translate_percent=(-.05, .05), shear=(-5, 5)),
+            # A.Solarize(),
             A.GaussianBlur(),
             ToTensorV2(p=1.0)
-    ], additional_targets={'mask': 'mask'})
+    ], additional_targets={'target': 'mask', 'mask': 'mask'})
 
     return transforms
 
@@ -84,12 +84,12 @@ def strong_tfms(norm: dict=None) -> A.Compose:
     transforms = A.Compose([
         A.Normalize(means, std),
         A.ChannelShuffle(),
-        A.GaussNoise(),
+        # A.GaussNoise(),
         A.RandomBrightnessContrast(),
         A.SafeRotate(),
         A.Sharpen((0.05, 0.95)),
         A.Affine(translate_percent=(-.125, .125), shear=(-15, 15)),
-        A.Solarize(),
+        # A.Solarize(),
         A.GaussianBlur(),
         ToTensorV2(p=1.0)
     ])
@@ -116,7 +116,7 @@ def null_tfms(norm: dict=None) -> A.Compose:
     transforms = A.Compose([
         A.Normalize(means, std, ),
         ToTensorV2(p=1.0)
-    ])
+    ], additional_targets={'target': 'mask', 'mask': 'mask'})
 
     return transforms
 
