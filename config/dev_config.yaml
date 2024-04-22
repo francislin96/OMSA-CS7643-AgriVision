@@ -28,4 +28,4 @@ params:
   epochs: 20
   lam: 0 # Weight for unlabled loss in total loss calculation
   mu: 1 # Scaling factor for unlabled loss
-
+  focal_loss: True

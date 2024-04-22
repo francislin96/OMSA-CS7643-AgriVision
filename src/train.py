@@ -14,6 +14,7 @@ from src.utils.eval import AverageMeterSet
 from src.utils.training import add_weight_decay
 from src.models.optimizers import get_exp_scheduler, get_SGD
 from src.metrics import Metrics
+from src.utils.training import reweight_loss
 
 
 logger = logging.getLogger()
@@ -149,7 +150,10 @@ def train_step(
     del inputs
 
     # Compute CE loss for labeled samples
-    labeled_loss = F.cross_entropy(logits_x, labels, reduction="mean")
+    if args.focal_loss:
+        labeled_loss = F.cross_entropy(logits_x, labels, reduction="mean", weight=reweight_loss(labels))
+    else:
+        labeled_loss = F.cross_entropy(logits_x, labels, reduction="mean")
 
     # Compute pseudo-labels for unlabeled samples based on model predictions on weakly augmented samples
     targets_u, mask = pseudo_labels(args, logits_u_weak)
