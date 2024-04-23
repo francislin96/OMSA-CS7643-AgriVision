@@ -257,12 +257,12 @@ def train_step(
             loss = F.cross_entropy(logits, labels, reduction="mean", weight=reweight_loss(labels))
         else:
             dice_loss_criterion = DiceLoss(classes=args.num_classes, ignore_index=0)
-            tversky_loss_criterion = TverskyLoss(args, alpha=0.5, beta=0.5)
-            focal_tversky = FocalTverskyLoss(args)
+            # tversky_loss_criterion = TverskyLoss(args, alpha=0.5, beta=0.5)
+            # focal_tversky = FocalTverskyLoss(args)
 
             # loss = DiceLoss(logits, labels, reduction="mean")
-            # loss = dice_loss_criterion(logits, labels)
-            loss = focal_tversky(logits, labels)
+            loss = dice_loss_criterion(logits, labels)
+            # loss = focal_tversky(logits, labels)
         
         print("Losses: ", loss.item())
         
@@ -290,7 +290,7 @@ def validate_epoch(args, model, val_loader, metrics):
     for val_batch in val_loader:
         val_img, val_labels = val_batch
         val_img = val_img.to(args.device)
-        val_labels = val_img.to(args.device).long()
+        val_labels = val_labels.to(args.device).long()
         logits = model(val_img)
         metrics.update_validation(logits, val_labels)
         val_loss += F.cross_entropy(logits, val_labels.long(), reduction="mean") * val_img.size(0)
