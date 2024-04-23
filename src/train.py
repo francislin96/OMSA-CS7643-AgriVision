@@ -257,12 +257,12 @@ def train_step(
             loss = F.cross_entropy(logits, labels, reduction="mean", weight=reweight_loss(labels))
         else:
             dice_loss_criterion = DiceLoss(classes=args.num_classes, ignore_index=0)
-            tversky_loss_criterion = TverskyLoss(args, alpha=0.5, beta=0.5)
-            focal_tversky = FocalTverskyLoss(args)
+            # tversky_loss_criterion = TverskyLoss(args, alpha=0.5, beta=0.5)
+            # focal_tversky = FocalTverskyLoss(args)
 
             # loss = DiceLoss(logits, labels, reduction="mean")
-            # loss = dice_loss_criterion(logits, labels)
-            loss = focal_tversky(logits, labels)
+            loss = dice_loss_criterion(logits, labels)
+            # loss = focal_tversky(logits, labels)
         
         print("Losses: ", loss.item())
         

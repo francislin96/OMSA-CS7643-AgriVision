@@ -1,28 +1,25 @@
 model: deep_lab
 # encoder: resnet34
-encoder: efficientnet-b1
+encoder: resnet101
+# encoder: efficientnet-b1
 encoder_depth: 5
 encoder_weights: imagenet # default=None
 input_channels: 4
 num_classes: 9
 ssl: False
-# train_l_dir: './data/dev_data/labeled/train'
-# train_u_dir: './data/dev_data/unlabeled/train'
-# val_dir: './data/dev_data/labeled/val'
-# test_dir: './data/dev_data/labeled/test'
 
-train_l_dir: './data/images_2021/train'
+train_l_dir: './data/images_2021_reshuffled/train'
 train_u_dir: './data/images_2024/train'
-val_dir: './data/images_2021/val'
-test_dir: './data/dev_data/labeled/test'
-optimizer: sgd
+val_dir: './data/images_2021_reshuffled/val'
+test_dir: './data/images_2021_reshuffled/test'
+optimizer: adam
 device: 'cuda'
 params:
   tau: .80 # high confidence tau for ssl (confidence threshold)
-  batch_size: 2
+  batch_size: 32
   lr: 0.005
-  weight_decay: 0.00001
-  momentum: 0.99
+  weight_decay: 0.0001
+  momentum: 0.9
   nesterov: True
   gamma: 0.999
   epochs: 20
