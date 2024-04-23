@@ -1,24 +1,26 @@
-model: deep_lab
-# encoder: resnet34
+model: deeplab
+model_run_name: test_config
 encoder: resnet101
-# encoder: efficientnet-b1
 encoder_depth: 5
-encoder_weights: imagenet # default=None
+encoder_weights: imagenet
 input_channels: 4
 num_classes: 9
 ssl: False
-
-
 train_l_dir: './data/images_2021_reshuffled/train'
 train_u_dir: './data/images_2024/train'
 val_dir: './data/images_2021_reshuffled/val'
 test_dir: './data/images_2021_reshuffled/test'
-
 optimizer: adam
 device: 'cuda'
+loss:
+  loss_fn: 'dice' # ['dice', 'tversky', 'focal_tversky']
+  alpha: 0.5 # controlling false positive
+  beta: 0.5 # controlling false negative
+  focal_gamma: 2
+  ignore_index: 0
 params:
   tau: .80 # high confidence tau for ssl (confidence threshold)
-  batch_size: 32
+  batch_size: 6
   lr: 0.005
   weight_decay: 0.0001
   momentum: 0.9
