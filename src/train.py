@@ -17,6 +17,7 @@ from src.utils.training import add_weight_decay
 from src.models.optimizers import get_exp_scheduler, get_SGD, get_adam
 from src.metrics import Metrics
 from src.utils.training import reweight_loss
+from src.loss.criterions import DiceLoss, TverskyLoss, FocalTverskyLoss
 
 logger = logging.getLogger()
 
@@ -43,6 +44,7 @@ def train(
 
     scheduler = get_exp_scheduler(optimizer, gamma=args.gamma)
     start_epoch = 0
+
 
     metrics = Metrics(args)
     for epoch in range(start_epoch, args.epochs):
@@ -132,13 +134,15 @@ def train_epoch(
 
     # Move scheduler step to epoch level
     scheduler.step()
-
-    return (
-        meters["total_loss"].avg,
-        meters["labeled_loss"].avg,
-        meters["unlabeled_loss"].avg,
-    )
-
+    if args.ssl:
+        return (
+            meters["total_loss"].avg,
+            meters["labeled_loss"].avg,
+            meters["unlabeled_loss"].avg,
+        )
+    else:
+        return meters['total_loss'].avg
+    
 def train_ssl_epoch(
         args, 
         model: torch.nn.Module, 
@@ -252,7 +256,13 @@ def train_step(
         if args.focal_loss:
             loss = F.cross_entropy(logits, labels, reduction="mean", weight=reweight_loss(labels))
         else:
-            loss = F.cross_entropy(logits, labels, reduction="mean")
+            dice_loss_criterion = DiceLoss(classes=args.num_classes, ignore_index=0)
+            tversky_loss_criterion = TverskyLoss(args, alpha=0.5, beta=0.5)
+            focal_tversky = FocalTverskyLoss(args)
+
+            # loss = DiceLoss(logits, labels, reduction="mean")
+            # loss = dice_loss_criterion(logits, labels)
+            loss = focal_tversky(logits, labels)
         
         print("Losses: ", loss.item())
         

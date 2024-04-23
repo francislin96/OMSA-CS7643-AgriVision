@@ -4,7 +4,7 @@ import yaml
 from src.train import train
 from src.datasets.fixmatch_datasets import get_datasets
 from src.datasets.dataloaders import get_dataloaders
-from src.models.create_models import deeplabv3_plus
+from src.models.create_models import deeplabv3_plus, fpn, unet_plusplus
 from src.utils.transforms import train_tfms, strong_tfms, weak_tfms, null_tfms
 
 
@@ -36,8 +36,10 @@ def main(args):
     )
 
     model = deeplabv3_plus(args).to(args.device)
+    # model = unet_plusplus(args).to(args.device)
+    # model = fpn(args).to(args.device)
 
-    train(args, model, train_l_loader, val_loader, train_u_loader=None)
+    train(args, model, train_l_loader, val_loader, train_u_loader=None, filter_bias_and_bn=True)
 
 if __name__ == '__main__':
 
