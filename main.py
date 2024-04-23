@@ -6,7 +6,7 @@ from src.datasets.fixmatch_datasets import get_datasets
 from src.datasets.dataloaders import get_dataloaders
 from src.models.create_models import deeplabv3_plus, fpn, unet_plusplus
 from src.utils.transforms import train_tfms, strong_tfms, weak_tfms, null_tfms
-from src.loss.criterions import DiceLoss, TverskyLoss, FocalTverskyLoss
+from src.loss.criterions import DiceLoss, TverskyLoss, FocalTverskyLoss, ACW_loss
 
 
 def main(args):
@@ -53,6 +53,8 @@ def main(args):
         criterion = TverskyLoss(args)
     elif args.loss_fn=='focal_tversky':
         criterion = FocalTverskyLoss(args)
+    elif args.loss_fn=='acw':
+        criterion = ACW_loss(args)
 
     train(args, model, train_l_loader, val_loader, criterion, filter_bias_and_bn=True)
 

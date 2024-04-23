@@ -10,10 +10,11 @@ train_l_dir: './data/images_2021_reshuffled/train'
 train_u_dir: './data/images_2024/train'
 val_dir: './data/images_2021_reshuffled/val'
 test_dir: './data/images_2021_reshuffled/test'
+checkpoint_dir: './checkpoint'
 optimizer: adam
 device: 'cuda'
 loss:
-  loss_fn: 'dice' # ['dice', 'tversky', 'focal_tversky']
+  loss_fn: 'acw' # ['dice', 'tversky', 'focal_tversky']
   alpha: 0.5 # controlling false positive
   beta: 0.5 # controlling false negative
   focal_gamma: 2
