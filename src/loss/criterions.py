@@ -3,11 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DiceLoss(nn.Module):
-    def __init__(self, classes: int, ignore_index=None, eps=1e-6):
+    def __init__(self, args):
         super(DiceLoss, self).__init__()
-        self.classes = classes
-        self.ignore_index = ignore_index
-        self.eps = eps
+        self.classes = args.num_classes
+        self.ignore_index = args.ignore_index
+        self.eps = 1e-6
 
     def forward(self, logits, target):
         """
@@ -41,7 +41,7 @@ class DiceLoss(nn.Module):
         return dice_loss.mean()
     
 class TverskyLoss(nn.Module):
-    def __init__(self, args, alpha=0.5, beta=0.5, smooth=1e-6):
+    def __init__(self, args, alpha=0.5, beta=0.5):
         """
         Initialize TverskyLoss module.
         
@@ -52,9 +52,9 @@ class TverskyLoss(nn.Module):
         """
         super(TverskyLoss, self).__init__()
         self.args = args
-        self.alpha = alpha
-        self.beta = beta
-        self.smooth = smooth
+        self.alpha = args.alpha
+        self.beta = args.beta
+        self.smooth = 1e-6
 
     def forward(self, logits, targets):
         """
@@ -93,7 +93,7 @@ class TverskyLoss(nn.Module):
         return tversky_loss
     
 class FocalTverskyLoss(nn.Module):
-    def __init__(self, args, alpha=0.5, beta=0.5, gamma=2.0, smooth=1e-6):
+    def __init__(self, args):
         """
         Initialize FocalTverskyLoss module.
 
@@ -104,10 +104,11 @@ class FocalTverskyLoss(nn.Module):
             smooth (float): Small constant to avoid division by zero.
         """
         super(FocalTverskyLoss, self).__init__()
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
-        self.smooth = smooth
+        self.args = args
+        self.alpha = args.alpha
+        self.beta = args.beta
+        self.gamma = args.gamma
+        self.smooth = 1e-6
         self.args = args
 
     def forward(self, logits, targets):
