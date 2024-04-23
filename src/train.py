@@ -290,7 +290,7 @@ def validate_epoch(args, model, val_loader, metrics):
     for val_batch in val_loader:
         val_img, val_labels = val_batch
         val_img = val_img.to(args.device)
-        val_labels = val_img.to(args.device).long()
+        val_labels = val_labels.to(args.device).long()
         logits = model(val_img)
         metrics.update_validation(logits, val_labels)
         val_loss += F.cross_entropy(logits, val_labels.long(), reduction="mean") * val_img.size(0)
