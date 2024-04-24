@@ -206,14 +206,22 @@ def validate_epoch(model, val_loader, metrics):
 @torch.no_grad()
 def predict(args, model, data_loader, visualize=True):
     model.eval()
+    name = 0
     for batch in data_loader:
         img, labels = batch
         img = img.to(args.device)
         labels = labels.to(args.device).long()
         logits = model(img)
         predictions = torch.argmax(logits, dim=1)
-        print(logits.shape)
-        print(predictions.shape)
-
+        
         if visualize:
-            pass
+            from src.utils.visualize import display_image
+            for i in range(img.size(0)):
+                display_image(
+                    rgb_image=img[i, :3, :, :].permute(1 , 2, 0).cpu().numpy(),
+                    nir_image=img[i, 3, :, :].unsqueeze(2).cpu().numpy(),
+                    true_labels=labels[i, :, :].unsqueeze(2).cpu().numpy(),
+                    pred_labels=predictions[i, :, :].cpu().numpy(),
+                    filename=str(name)+".jpg"
+                )
+                name += 1
