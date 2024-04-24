@@ -1,7 +1,7 @@
 import torch
 import argparse
 import yaml
-from src.train import train
+from src.train import train, predict
 from src.datasets.fixmatch_datasets import get_datasets
 from src.datasets.dataloaders import get_dataloaders
 from src.models.create_models import deeplabv3_plus
@@ -40,7 +40,9 @@ def main(args):
 
     model = deeplabv3_plus(args).to(args.device)
 
-    train(args, model, train_l_loader, train_u_loader, val_loader)
+    trained_model = train(args, model, train_l_loader, train_u_loader, val_loader)
+
+    predict(args, trained_model, val_loader)
 
 if __name__ == '__main__':
 

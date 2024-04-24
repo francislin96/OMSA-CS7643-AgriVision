@@ -202,3 +202,18 @@ def validate_epoch(model, val_loader, metrics):
         val_size += val_img.size(0)
     # average loss
     return (val_loss / val_size).item(), metrics
+
+@torch.no_grad()
+def predict(args, model, data_loader, visualize=True):
+    model.eval()
+    for batch in data_loader:
+        img, labels = batch
+        img = img.to(args.device)
+        labels = labels.to(args.device).long()
+        logits = model(img)
+        predictions = torch.argmax(logits, dim=1)
+        print(logits.shape)
+        print(predictions.shape)
+
+        if visualize:
+            pass
