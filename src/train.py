@@ -2,6 +2,7 @@ import os
 import argparse
 import logging
 from tqdm import tqdm
+from collections import deque
 from typing import Callable, Tuple
 from PIL import Image
 from functools import partial
@@ -206,7 +207,7 @@ def validate_epoch(model, val_loader, metrics):
 @torch.no_grad()
 def predict(args, model, data_loader, visualize=True):
     model.eval()
-    name = 0
+    image_ids = deque(data_loader.dataset.rgb_names)
     for batch in data_loader:
         img, labels = batch
         img = img.to(args.device)
@@ -222,6 +223,5 @@ def predict(args, model, data_loader, visualize=True):
                     nir_image=img[i, 3, :, :].unsqueeze(2).cpu().numpy(),
                     true_labels=labels[i, :, :].unsqueeze(2).cpu().numpy(),
                     pred_labels=predictions[i, :, :].cpu().numpy(),
-                    filename=str(name)+".jpg"
+                    filename="./data/predictions/" + image_ids.popleft()
                 )
-                name += 1
