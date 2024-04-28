@@ -14,7 +14,7 @@ class DiceLoss(nn.Module):
         logits : the output from the model (before softmax) with shape [N, C, H, W]
         target : the ground truth with shape [N, H, W]
         """
-        # Apply softmax to the logitss
+        # Apply softmax to the logits
         logits = F.softmax(logits, dim=1)
 
         # Create the one-hot encoded version of target

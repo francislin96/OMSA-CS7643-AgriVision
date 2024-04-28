@@ -170,3 +170,4 @@ data/images_2021_reshuffled/train
 data/images_2021_reshuffled/test
 data_images_2021_reshuffled/val
 checkpoint
+inference/*.jpg

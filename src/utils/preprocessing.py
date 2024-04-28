@@ -275,7 +275,8 @@ def stack_rgbnir(img_id: str, root_dir: str) -> np.ndarray:
         nir = cv2.imread(str(nir_path), cv2.IMREAD_GRAYSCALE)[..., np.newaxis]
         rgb = cv2.imread(str(rgb_path), cv2.IMREAD_COLOR)
         rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
-        stacked = np.concatenate((rgb, nir), axis=2)
+        stacked = np.concatenate((rgb, nir), axis=2) / 255.0
+        # stacked = np.concatenate((nir, rgb), axis=2) / 255.0
     else:
         raise ValueError(f"Error reading the paths for {nir_path} and {rgb_path}. Please check the root_dir {root_dir} and the img_id {img_id}")
     

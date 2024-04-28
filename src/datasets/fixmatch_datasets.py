@@ -74,11 +74,6 @@ class AgDataset(Dataset):
         self.transforms = transforms
         self.null_transform = null_tfms
 
-        print(len(self.nir_names))
-        print(len(self.rgb_names))
-
-
-
     def __getitem__(self, index):
         
         # Ensure that the indices don't get out of range with the dataset sampler
@@ -87,6 +82,10 @@ class AgDataset(Dataset):
 
         img_id = self.rgb_names[index][:-4]
         stacked, mask = stack_rgbnir(img_id=img_id, root_dir=self.root_dir)
+
+        # print(stacked)
+        # print(stacked.min())
+        # print(stacked.max())
 
         # apply weak and strong transformations
         if self.ssl_transforms:
@@ -102,11 +101,16 @@ class AgDataset(Dataset):
         # Return a one set of transformations
         elif self.transforms: 
             target = map_labels_to_target(img_id=img_id, root_dir=self.root_dir, dataset_map=class_mapping)
+            # print(target.shape)
 
             transformed = self.transforms(image=stacked, target=target, mask=mask)
             trans_img = transformed["image"]
             trans_target = transformed["target"]
             trans_mask = transformed["mask"]
+
+            # print(trans_img)
+            # print(trans_img.min())
+            # print(trans_img.max())
 
             trans_img *= trans_mask
             trans_target *= trans_mask

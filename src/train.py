@@ -102,7 +102,7 @@ def train(
             }, checkpoint_path)
             logger.info(f"Checkpoint saved to {checkpoint_path} at epoch {epoch+1} with loss {val_loss}")
 
-    return model
+    return model, epoch_meters
 
 def train_epoch(
         args, 
@@ -118,6 +118,11 @@ def train_epoch(
     metrics.reset()
     model.train()
 
+    # remove later
+    epoch_losses = []
+    # remove later
+
+
     p_bar = tqdm(range(len(train_l_loader)))
 
     for batch_idx, batch in enumerate(train_l_loader):
@@ -130,13 +135,16 @@ def train_epoch(
         # Backpropagate and step optimizer
         loss.backward()
         optimizer.step()
+        if batch_idx % 100 == 0:
+            scheduler.step()
         
         # remove plotting later
-        # epoch_losses.append(loss.cpu().item())
-        # if batch_idx % 100 == 0:
-        #     plt.plot(epoch_losses)
-        #     plt.savefig(f'Losses_{batch_idx}.png')
-        #     plt.close()
+        epoch_losses.append(loss.cpu().item())
+        if batch_idx % 100 == 0:
+            plt.plot(epoch_losses)
+            plt.savefig(f'Losses_{batch_idx}.png')
+            plt.close()
+        # remove plotting later
 
         p_bar.set_description(
             "Train Epoch: {epoch}/{epochs:4}. Iter: {batch:4}/{iter:4}. LR: {lr:.6f}. Loss: {loss:.6f}".format(
@@ -151,7 +159,7 @@ def train_epoch(
         p_bar.update()
 
     # Move scheduler step to epoch level
-    scheduler.step()
+    # scheduler.step()
 
     return meters['total_loss'].avg, metrics
     

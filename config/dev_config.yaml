@@ -1,5 +1,5 @@
 model: deeplab
-model_run_name: test_config
+model_run_name: test_dice
 encoder: resnet101
 encoder_depth: 5
 encoder_weights: imagenet
@@ -11,14 +11,14 @@ train_u_dir: './data/images_2024/train'
 val_dir: './data/images_2021_reshuffled/val'
 test_dir: './data/images_2021_reshuffled/test'
 checkpoint_dir: './checkpoint'
-optimizer: adam
+optimizer: sgd
 device: 'cuda'
 loss:
-  loss_fn: 'acw' # ['dice', 'tversky', 'focal_tversky']
-  alpha: 0.5 # controlling false positive
-  beta: 0.5 # controlling false negative
-  focal_gamma: 2
-  ignore_index: 0
+  loss_fn: dice # ['dice', 'tversky', 'focal_tversky', 'acw']
+  alpha: 0.7 # controlling false positive
+  beta: 0.3 # controlling false negative
+  focal_gamma: 1.33
+  ignore_index: 
 params:
   tau: .80 # high confidence tau for ssl (confidence threshold)
   batch_size: 6

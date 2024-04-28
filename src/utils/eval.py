@@ -62,7 +62,7 @@ class AverageMeterSet:
             meter.reset()
 
     def values(self, postfix=""):
-        return {name + postfix: meter.val for name, meter in self.meters.items()}
+        return {name + postfix: meter.vals for name, meter in self.meters.items()}
 
     def averages(self, postfix="/avg"):
         return {name + postfix: meter.avg for name, meter in self.meters.items()}

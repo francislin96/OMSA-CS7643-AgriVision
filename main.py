@@ -1,12 +1,14 @@
 import torch
 import argparse
 import yaml
+import json
 from src.train import train
 from src.datasets.fixmatch_datasets import get_datasets
 from src.datasets.dataloaders import get_dataloaders
 from src.models.create_models import deeplabv3_plus, fpn, unet_plusplus
 from src.utils.transforms import train_tfms, strong_tfms, weak_tfms, null_tfms
 from src.loss.criterions import DiceLoss, TverskyLoss, FocalTverskyLoss, ACW_loss
+from torch.nn import CrossEntropyLoss
 
 
 def main(args):
@@ -55,8 +57,14 @@ def main(args):
         criterion = FocalTverskyLoss(args)
     elif args.loss_fn=='acw':
         criterion = ACW_loss(args)
+    else:
+        print("Using cross entropy loss")
+        criterion = CrossEntropyLoss(reduce='mean')
 
-    train(args, model, train_l_loader, val_loader, criterion, filter_bias_and_bn=True)
+    model, epoch_meters = train(args, model, train_l_loader, val_loader, criterion, filter_bias_and_bn=True)
+
+    with open(f'{args.model_run_name}_epoch_meters.json', 'w') as f:
+        json.dump(epoch_meters, f)
 
 if __name__ == '__main__':
 
