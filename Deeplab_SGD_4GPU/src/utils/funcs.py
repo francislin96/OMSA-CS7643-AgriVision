@@ -121,38 +121,6 @@ def img_mask_pad(image, mask, target=(288, 288)):
     return paded['image'], paded['mask']
 
 
-# def composed_augmentation(image, mask):
-#     aug = Compose([
-#         VerticalFlip(p=0.5),
-#         HorizontalFlip(p=0.5),
-#         RandomRotate90(p=0.5),
-#         HueSaturationValue(hue_shift_limit=20,
-#                            sat_shift_limit=5,
-#                            val_shift_limit=15, p=0.5),
-
-#         OneOf([
-#             GridDistortion(p=0.5),
-#             Transpose(p=0.5)
-#         ], p=0.5),
-
-#         CLAHE(p=0.5)
-#     ])
-
-#     auged = aug(image=image, mask=mask)
-#     return auged['image'], auged['mask']
-
-
-# def get_random_pos(img, window_shape):
-#     """ Extract of 2D random patch of shape window_shape in the image """
-#     w, h = window_shape
-#     W, H = img.shape[-2:]
-#     x1 = random.randint(0, W - w - 1)
-#     x2 = x1 + w
-#     y1 = random.randint(0, H - h - 1)
-#     y2 = y1 + h
-#     return x1, x2, y1, y2
-
-
 def get_training_list(root_folder, count_label=True):
     dict_list = {}
     basename = [img_basename(f) for f in os.listdir(os.path.join(root_folder, 'images/nir'))]
