@@ -1,0 +1,53 @@
+model: deeplab
+dataset: Agriculture
+scale_rate: 1.0
+bands:
+- NIR
+- RGB
+ckpt_path: ./ckpt
+input_size:
+- 512
+- 512
+k: 0
+k_folder: 0
+labels:
+- background
+- double_plant
+- drydown
+- endrow
+- nutrient_deficiency
+- planter_skip
+- water
+- waterway
+- weed_cluster
+lr: 1.5e-4
+lr_decay: 0.9
+max_iter: 100000000.0
+model: DeepLabV3Plus
+momentum: 0.9
+num_classes: 9
+pre_norm: false
+print_freq: 20
+save_path: ./ckpt/DeepLabV3plus/
+save_pred: true
+save_rate: 0.1
+scale_rate: 1.0
+seeds: 69278
+snapshot: ''
+suffix_note: ACW_loss_adam_deeplab
+train_batch_per_gpu: 5
+train_samples: 45166
+val_batch_per_gpu: 5
+val_samples: 15056
+test_samples: 15056
+n_gpus: 4
+val_size:
+- 512
+- 512
+weight_decay: 2.0e-05
+encoder_weights: imagenet
+encoder: se_resnext101_32x4d
+encoder_depth: 5
+ignore_index: 255
+input_channels: 4
+epochs: 25
