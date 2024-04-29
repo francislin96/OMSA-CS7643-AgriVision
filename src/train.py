@@ -81,11 +81,17 @@ def train(
         val_loss, val_metrics = validate_epoch(
             args,
             model,
+            train_u_loader,
             epoch,
             metrics,
             val_loader,
             criterion
         )
+
+        print("total_loss: ", train_total_loss)
+        print("labeled_loss: ", train_l_loss)
+        print("unlabeled_loss: ", train_u_loss)
+        print(metrics)
 
         epoch_meters.update("epoch_val_loss", val_loss)
         print("epoch_val_loss: ", val_loss)
@@ -160,6 +166,13 @@ def train_epoch(
 
     # Move scheduler step to epoch level
     # scheduler.step()
+    return (
+        meters["total_loss"].avg,
+        meters["labeled_loss"].avg,
+        meters["unlabeled_loss"].avg,
+        metrics
+    )
+
 
     return meters['total_loss'].avg, metrics
     
