@@ -1,0 +1,15 @@
+model: deeplab
+model_run_name: test_config
+# encoder: se_resnext101_32x4d
+encoder: resnet101
+encoder_depth: 5
+encoder_weights: 'imagenet'
+input_channels: 4
+num_classes: 9
+test_dir: './data/images_2021_reshuffled/test'
+checkpoint_dir: './checkpoint/test_dice'
+inference_dir: './inference'
+# checkpoint_name: epoch_19_loss_0.45038_acc_0.82621_acc-cls_0.74087_mean-iu_0.60962_fwavacc_0.70690_f1_0.74885_lr_0.0000671535.pth
+checkpoint_name: test_dice_epoch_19.pt
+device: 'cuda'
+

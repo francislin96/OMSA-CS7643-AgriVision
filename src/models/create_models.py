@@ -17,6 +17,18 @@ def deeplabv3_plus(args) -> torch.nn.Module:
 
     return model
 
+def unet_plusplus(args) -> torch.nn.Module:
+    
+    model = smp.UnetPlusPlus(
+        encoder_name=args.encoder,
+        encoder_depth=args.encoder_depth,
+        encoder_weights=args.encoder_weights,
+        in_channels=args.input_channels,
+        classes=args.num_classes
+    )
+
+    return model
+
 def fpn(args) -> torch.nn.Module:
 
     model = smp.FPN(
@@ -26,6 +38,8 @@ def fpn(args) -> torch.nn.Module:
         in_channels=args.input_channels,
         classes=args.num_classes
     )
+
+    return model
 
 
 if __name__ == '__main__':

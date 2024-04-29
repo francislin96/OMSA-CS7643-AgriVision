@@ -18,21 +18,21 @@ def train_tfms(norm: dict=None) -> A.Compose:
         means = norm['means']
         std = norm['std']
     else:
-        means = (0, 0, 0, 0)
-        std = (1, 1, 1, 1)
+        means = (0.43708387305239216, 0.4466530427302275, 0.4401014816617216, 0.46393957606389413)
+        std = (0.17158614003413608, 0.1619190515338035, 0.16374068313931647, 0.18257160106446393)
 
     transforms = A.Compose([
-            A.Normalize(means, std),
-            A.ChannelShuffle(),
-            A.GaussNoise(),
-            A.RandomBrightnessContrast(),
-            A.SafeRotate(),
-            A.Sharpen((0.05, 0.95)),
-            A.Affine(translate_percent=(-.125, .125), shear=(-15, 15)),
-            A.Solarize(),
-            A.GaussianBlur(),
+            # A.Normalize(means, std),
+            # A.ChannelShuffle(p=.2),
+            # A.GaussNoise(),
+            # A.RandomBrightnessContrast(p=.2),
+            # A.SafeRotate(),
+            # A.Sharpen((0.05, 0.95)),
+            A.Affine(translate_percent=(-.05, .05), shear=(-5, 5)),
+            # A.Solarize(),
+            # A.GaussianBlur(),
             ToTensorV2(p=1.0)
-    ], additional_targets={'mask': 'mask'})
+    ], additional_targets={'target': 'mask', 'mask': 'mask'})
 
     return transforms
 
@@ -84,12 +84,12 @@ def strong_tfms(norm: dict=None) -> A.Compose:
     transforms = A.Compose([
         A.Normalize(means, std),
         A.ChannelShuffle(),
-        A.GaussNoise(),
+        # A.GaussNoise(),
         A.RandomBrightnessContrast(),
         A.SafeRotate(),
         A.Sharpen((0.05, 0.95)),
         A.Affine(translate_percent=(-.125, .125), shear=(-15, 15)),
-        A.Solarize(),
+        # A.Solarize(),
         A.GaussianBlur(),
         ToTensorV2(p=1.0)
     ])
@@ -114,9 +114,9 @@ def null_tfms(norm: dict=None) -> A.Compose:
         std = (1, 1, 1, 1)
 
     transforms = A.Compose([
-        A.Normalize(means, std, ),
+        # A.Normalize(means, std, ),
         ToTensorV2(p=1.0)
-    ])
+    ], additional_targets={'target': 'mask', 'mask': 'mask'})
 
     return transforms
 

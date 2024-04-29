@@ -5,6 +5,8 @@ from tqdm import tqdm
 from typing import Callable, Tuple
 from PIL import Image
 from functools import partial
+import matplotlib
+matplotlib.use('Agg') # Non GUI backend for matplotlib
 import matplotlib.pyplot as plt
 
 import torch
@@ -12,22 +14,33 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from src.utils.eval import AverageMeterSet
 from src.utils.training import add_weight_decay
-from src.models.optimizers import get_exp_scheduler, get_SGD
+from src.models.optimizers import get_exp_scheduler, get_SGD, get_adam
 from src.metrics import Metrics
+from src.utils.training import reweight_loss
+from src.loss.criterions import DiceLoss, TverskyLoss, FocalTverskyLoss
+from data.dataset_maps import class_mapping
 
 
-logger = logging.getLogger()
 
 def train(
         args, 
         model, 
         train_l_loader: DataLoader, 
-        train_u_loader: DataLoader, 
         val_loader: DataLoader, 
-        test_loader: DataLoader=None, 
+        criterion: torch.nn.Module,
         filter_bias_and_bn=True
     ):
+
+    logger = logging.getLogger()
+
+    # Set up checkpoint_dir
+    chkpt_root_dir = args.checkpoint_dir
+    chkpt_path = os.path.join(chkpt_root_dir, args.model_run_name)
+    os.makedirs(chkpt_path, exist_ok=True)
+
+    best_val_loss = float('inf')
     
+    # Set up main train arguments
     weight_decay = args.weight_decay
     if weight_decay and filter_bias_and_bn:
         parameters = add_weight_decay(model, weight_decay)
@@ -35,80 +48,124 @@ def train(
     else:
         parameters = model.parameters()
 
+    # Get optimizer and scheduler
     if args.optimizer.lower() == 'sgd':
         optimizer = get_SGD(parameters, lr=args.lr, momentum=args.momentum, weight_decay=weight_decay, nesterov=args.nesterov)
+    elif args.optimizer.lower() == 'adam':
+        optimizer = get_adam(parameters, lr=args.lr, weight_decay=weight_decay)
+    else:
+        raise ValueError(f"args.optimizer should be one of ['sgd', 'adam']")
 
     scheduler = get_exp_scheduler(optimizer, gamma=args.gamma)
     start_epoch = 0
 
-    metrics = Metrics()
+    # Instantiate metrics
+    metrics = Metrics(args, class_mapping)
+    epoch_meters = AverageMeterSet()
+    # Main training loop
     for epoch in range(start_epoch, args.epochs):
-        train_total_loss, train_l_loss, train_u_loss, metrics = train_epoch(
+        train_loss, train_metrics = train_epoch(
+            args,
+            model, 
+            optimizer, 
+            scheduler,
+            epoch,
+            metrics, 
+            train_l_loader,
+            criterion
+        )
+        epoch_meters.update("epoch_train_loss", train_loss, 1)
+        print("epoch_train_loss: ", train_loss)
+        print(train_metrics)
+
+        val_loss, val_metrics = validate_epoch(
             args,
             model,
-            optimizer,
-            scheduler,
-            train_l_loader,
             train_u_loader,
             epoch,
-            metrics
+            metrics,
+            val_loader,
+            criterion
         )
+
         print("total_loss: ", train_total_loss)
         print("labeled_loss: ", train_l_loss)
         print("unlabeled_loss: ", train_u_loss)
         print(metrics)
 
-    return model
+        epoch_meters.update("epoch_val_loss", val_loss)
+        print("epoch_val_loss: ", val_loss)
+        print(val_metrics)
 
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            checkpoint_path = os.path.join(chkpt_path, f"{args.model_run_name}_epoch_{epoch+1}.pt")
+            torch.save({
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': val_loss,
+            }, checkpoint_path)
+            logger.info(f"Checkpoint saved to {checkpoint_path} at epoch {epoch+1} with loss {val_loss}")
+
+    return model, epoch_meters
 
 def train_epoch(
         args, 
         model: torch.nn.Module, 
         optimizer: torch.optim.Optimizer, 
         scheduler: torch.optim.lr_scheduler,
-        train_l_loader, 
-        train_u_loader, 
-        epoch,
-        metrics
-    ):
-
+        epoch : int,
+        metrics: Metrics,
+        train_l_loader: DataLoader, 
+        criterion: torch.nn.Module
+):
     meters = AverageMeterSet()
     metrics.reset()
-
-    model.zero_grad()
     model.train()
 
-    epoch_losses = [] # remove later
-    p_bar = tqdm(range(len(train_l_loader)))
-    for batch_idx, batch in enumerate(
-        zip(train_l_loader, train_u_loader)
-    ):
-        loss, metrics = train_step(args, model, batch, meters, metrics)
+    # remove later
+    epoch_losses = []
+    # remove later
 
+
+    p_bar = tqdm(range(len(train_l_loader)))
+
+    for batch_idx, batch in enumerate(train_l_loader):
+        # Zero the gradient
+        model.zero_grad()
+
+        # Calculate loss
+        loss, metrics = train_step(args, model, batch, meters, metrics, criterion)
+
+        # Backpropagate and step optimizer
+        loss.backward()
+        optimizer.step()
+        if batch_idx % 100 == 0:
+            scheduler.step()
+        
         # remove plotting later
         epoch_losses.append(loss.cpu().item())
         if batch_idx % 100 == 0:
             plt.plot(epoch_losses)
             plt.savefig(f'Losses_{batch_idx}.png')
             plt.close()
-
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        scheduler.step()
+        # remove plotting later
 
         p_bar.set_description(
-            "Train Epoch: {epoch}/{epochs:4}. Iter: {batch:4}/{iter:4}. LR: {lr:.6f}.".format(
+            "Train Epoch: {epoch}/{epochs:4}. Iter: {batch:4}/{iter:4}. LR: {lr:.6f}. Loss: {loss:.6f}".format(
                 epoch=epoch + 1,
                 epochs=args.epochs,
                 batch=batch_idx + 1,
                 iter=len(train_l_loader),
                 lr=scheduler.get_last_lr()[0],
+                loss=loss.item()
             )
         )
         p_bar.update()
 
+    # Move scheduler step to epoch level
+    # scheduler.step()
     return (
         meters["total_loss"].avg,
         meters["labeled_loss"].avg,
@@ -117,50 +174,30 @@ def train_epoch(
     )
 
 
+    return meters['total_loss'].avg, metrics
+    
 def train_step(
         args, 
         model: torch.nn.Module, 
-        batch: Tuple, 
+        batch: Tuple,
         meters: AverageMeterSet,
-        metrics: Metrics
+        metrics: Metrics,
+        criterion: torch.nn.Module
     ):
 
-    # unpack batches
-    lab_batch, unlab_batch = batch
-    l_img, labels = lab_batch
-    weak_img, strong_img = unlab_batch
-
-    # Concatenate inputs and send to device
-    inputs = torch.cat((l_img, weak_img, strong_img)).float().to(args.device)
+    img, labels = batch
+    img = img.float().to(args.device)
     labels = labels.to(args.device).long()
+    logits = model(img)
+    if args.focal_loss:
+        pass
 
-    # Compute logits for labeled and unlabeled data
-    logits = model(inputs)
-    logits_x = logits[:len(l_img)]
-    logits_u_weak, logits_u_strong = logits[len(l_img):].chunk(2)
-    del inputs
-
-    # Compute CE loss for labeled samples
-    labeled_loss = F.cross_entropy(logits_x, labels, reduction="mean")
-
-    # Compute pseudo-labels for unlabeled samples based on model predictions on weakly augmented samples
-    targets_u, mask = pseudo_labels(args, logits_u_weak)
-
-    # Calculate CE loss between pseudo labels and strong augmentation logits
-    unlabeled_loss = (F.cross_entropy(logits_u_weak, targets_u, reduction="none") * mask).mean() * 1/args.mu
-
-    loss = labeled_loss.mean() + args.lam * unlabeled_loss
-
-    print("Losses: ", loss.item(), labeled_loss.item(), unlabeled_loss.item())
-
+    # Compute loss and update meters
+    loss = criterion(logits, labels)
     meters.update("total_loss", loss.item(), 1)
-    meters.update("labeled_loss", labeled_loss.mean().item(), logits_x.size()[0])
-    meters.update("unlabeled_loss", unlabeled_loss.item(), logits_u_strong.size()[0])
 
-    # metrics
-    metrics.update_labeled(logits_x, labels)
-    metrics.update_unlabeled(logits_u_weak, targets_u)
-    print(metrics)
+    # metrics update
+    metrics.update_labeled(logits, labels)
 
     return loss, metrics
 
@@ -172,3 +209,57 @@ def pseudo_labels(args, logits_u_weak):
     mask = max_probs.ge(args.tau).float()
 
     return targets_u, mask
+
+@torch.no_grad()
+def validate_epoch(
+        args, 
+        model: torch.nn.Module, 
+        epoch : int,
+        metrics: Metrics,
+        val_loader: DataLoader,
+        criterion: torch.nn.Module
+):
+    model.eval()
+    meters = AverageMeterSet()
+
+    p_bar = tqdm(range(len(val_loader)))
+    for batch_idx, val_batch in enumerate(val_loader):
+        # Calculate loss
+        val_loss, metrics = validate_step(args, model, val_batch, meters, metrics, criterion)
+
+        p_bar.set_description(
+            "Val Epoch: {epoch}/{epochs:4}. Iter: {batch:4}/{iter:4}. Loss: {loss:.6f}".format(
+                epoch=epoch + 1,
+                epochs=args.epochs,
+                batch=batch_idx + 1,
+                iter=len(val_loader),
+                loss=val_loss.item()
+            )
+        )
+        p_bar.update()
+
+    return meters["val_loss"].avg, metrics
+
+@torch.no_grad()
+def validate_step(
+        args, 
+        model: torch.nn.Module, 
+        val_batch: Tuple,
+        meters: AverageMeterSet,
+        metrics: Metrics,
+        criterion: torch.nn.Module
+    ):
+
+    val_img, val_labels = val_batch
+    val_img = val_img.float().to(args.device)
+    val_labels = val_labels.to(args.device).long()
+    logits = model(val_img)
+
+    # Compute loss and update meters
+    val_loss = criterion(logits, val_labels)
+    meters.update("val_loss", val_loss.item(), 1)
+
+    # metrics update
+    metrics.update_validation(logits, val_labels)
+
+    return val_loss, metrics

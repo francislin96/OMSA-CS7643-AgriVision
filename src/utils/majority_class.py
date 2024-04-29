@@ -33,6 +33,5 @@ def get_major_class_label(data_root):
             label_images[label_index] = arr
         n_sum = np.argmax(np.sum(label_images,axis=(1,2)),axis=0)
         dataset_mapping['majority_class_label'].append(int(n_sum))
-    
     return dataset_mapping
 
