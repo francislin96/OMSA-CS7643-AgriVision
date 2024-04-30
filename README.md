@@ -50,6 +50,11 @@ Once we train a model, have the ability to download weights from AWS, Zenodo, or
 ```
 $ wget URL_TO_WEIGHTS.pth
 ```
+## Repo Structure
+Since we worked on several different aspects of the coe base at once, and not all of them were compatible, there are several branches in the repo.
+* main contains almost everything for the fixmatch implementations and local model training
+* Few-Shot-Learning contains the exploration of few shot learning for our dataset
+* deeplab_training_4GPUs contains the code for training the DeepLabModels on Stan's workstation at work.
 
 ## Inference Code or Django App Deployment
 Use this section to explain how to run inference scripts and/or stand up the Django application. We can always try to have this deployed in a AWS Sagemaker serverless instance for easy inference but that might be overkill...
@@ -60,11 +65,9 @@ Set your config file using the example in `./config/dev_config.yaml` as an examp
 Make sure your images and masks are in the same format as shown in the dummy dev_data set in `data/dev_data`
 ![Image Directory Structure](assets/image_dir_structure.png)
 
-Pull the latest commit from branch `fixmatch_dev` to get the dev_data
-
 In the root directory run 
 ```
-python test_main.py ./config/dev_config.yaml
+python main.py ./config/dev_config.yaml
 ```
 
 You should see a training progress bar and the loss decreasing slightly, not bad for completely random images lol!
