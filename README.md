@@ -60,11 +60,9 @@ Set your config file using the example in `./config/dev_config.yaml` as an examp
 Make sure your images and masks are in the same format as shown in the dummy dev_data set in `data/dev_data`
 ![Image Directory Structure](assets/image_dir_structure.png)
 
-Pull the latest commit from branch `fixmatch_dev` to get the dev_data
-
 In the root directory run 
 ```
-python test_main.py ./config/dev_config.yaml
+python main.py ./config/dev_config.yaml
 ```
 
 You should see a training progress bar and the loss decreasing slightly, not bad for completely random images lol!
